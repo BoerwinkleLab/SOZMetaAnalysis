@@ -1,0 +1,566 @@
+1                                        The SAS System           15:32 Friday, January 27, 2023
+
+WARNING: One or more libraries specified in the concatenated library SASHELP 
+WARNING: do not exist.  These libraries were removed from the concatenation.
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7) 
+      Licensed to UNIVERSITY OF NORTH CAROLINA CHAPEL HILL - SFA T&R, Site 70022629.
+NOTE: This session is executing on the W32_10PRO  platform.
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ W32_10PRO WIN 10.0.19041  Workstation
+
+NOTE: SAS initialization used:
+      real time           0.49 seconds
+      cpu time            0.21 seconds
+      
+
+NOTE: AUTOEXEC processing beginning; file is c:\progs\cmd\autoexec.sas.
+
+
+NOTE: AUTOEXEC processing completed.
+
+1          %let progname = g004.sas;
+2          ods pdf file = "g004.pdf" style=styles.journal;
+NOTE: Writing ODS PDF output to DISK destination "C:\prj\TRACS\Gillette\g004.pdf", 
+      printer "PDF".
+3          
+4          * input: ma_data2.csv
+5          
+6          * does: - Separate mixed models for the two margins
+7          *********************************************;
+8          libname X "";
+NOTE: Libref X was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: C:\prj\TRACS\Gillette\
+9          title "&progname: Separate mixed models for rsfMRI and comparative";
+10         *********************************************;
+11         
+12         title2 "ma_data2.csv";
+13         proc import datafile="ma_data2.csv" out=A replace;
+14           guessingrows =  max;
+15           run;
+
+16          /**********************************************************************
+17          *   PRODUCT:   SAS
+18          *   VERSION:   9.4
+19          *   CREATOR:   External File Interface
+20          *   DATE:      27JAN23
+21          *   DESC:      Generated SAS Datastep Code
+22          *   TEMPLATE SOURCE:  (None Specified.)
+23          ***********************************************************************/
+24             data WORK.A    ;
+25             %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+26             infile 'ma_data2.csv' delimiter = ',' MISSOVER DSD lrecl=32767 firstobs=2 ;
+2 The SAS System                                                 15:32 Friday, January 27, 2023
+
+27                informat id $16. ;
+28                informat modality best32. ;
+29                informat modality_type best32. ;
+30                informat a best32. ;
+31                informat b best32. ;
+32                informat c best32. ;
+33                informat d best32. ;
+34                format id $16. ;
+35                format modality best12. ;
+36                format modality_type best12. ;
+37                format a best12. ;
+38                format b best12. ;
+39                format c best12. ;
+40                format d best12. ;
+41             input
+42                         id  $
+43                         modality
+44                         modality_type
+45                         a
+46                         b
+47                         c
+48                         d
+49             ;
+50             if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro
+50       ! variable */
+51             run;
+
+NOTE: The infile 'ma_data2.csv' is:
+      Filename=C:\prj\TRACS\Gillette\ma_data2.csv,
+      RECFM=V,LRECL=32767,File Size (bytes)=683,
+      Last Modified=25Jan2023:15:48:46,
+      Create Time=25Jan2023:15:33:50
+
+NOTE: 25 records were read from the infile 'ma_data2.csv'.
+      The minimum record length was 20.
+      The maximum record length was 29.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+25 rows created in WORK.A from ma_data2.csv.
+  
+  
+  
+NOTE: WORK.A data set was successfully created.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.09 seconds
+      
+
+52         
+53         data A;
+54           set A (rename=(a=y11 b=y10 c=y01 d=y00)); * rows=rsfMRI, cols=comparative;
+55           n = y00+y01+y10+y11;
+56           if not missing(n);
+57           y1d = y10 + y11;
+58           yd1 = y01 + y11;
+59           p1raw = y1d/n;
+60           p2raw = yd1/n;
+61           run;
+3 The SAS System                                                 15:32 Friday, January 27, 2023
+
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 12 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+62         
+63         ******************************************************************;
+64         %macro m(y, pred, ttl, out);
+65         title2  &ttl;
+66         proc nlmixed data=A qpoints=25 cov corr ecov ecorr;
+67         
+68           parms
+69             beta       2.1
+70             log_sigma  0.33
+71           ;
+72         
+73           eta = u + beta;
+74           sigma   = exp(log_sigma);
+75           p = 1/(1+exp(-eta));
+76           model &y  ~ binomial(n, p);
+77           random u ~ normal(0, sigma*sigma) subject = id;
+78         
+79           *ods output ParameterEstimates=PARMS  CovMatParmEst=COV ;
+80           predict eta out=&out (rename= pred=&pred);
+81         
+82           run;
+83         %mend;
+84         ******************************************************************;
+85         
+86         %m(y1d, eta1, "1. rsfMRI", PRED1);
+
+
+NOTE: Convergence criterion (GCONV=1E-8) satisfied.
+NOTE: The data set WORK.PRED1 has 25 observations and 20 variables.
+NOTE: The PROCEDURE NLMIXED printed pages 1-2.
+NOTE: PROCEDURE NLMIXED used (Total process time):
+      real time           0.16 seconds
+      cpu time            0.10 seconds
+      
+
+87         
+88         data PRED1;
+89           set PRED1;
+90           p1 = 1/(1+exp(-eta1));
+91           p1l = 1/(1+exp(-lower));
+92           p1u = 1/(1+exp(-upper));
+93           run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED1.
+NOTE: The data set WORK.PRED1 has 25 observations and 23 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+94         
+95         proc sort data=PRED1; by n id; run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED1.
+NOTE: The data set WORK.PRED1 has 25 observations and 23 variables.
+4 The SAS System                                                 15:32 Friday, January 27, 2023
+
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+96         proc print data=PRED1;
+97           var id n p1raw p1 p1l p1u;
+98           run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED1.
+NOTE: The PROCEDURE PRINT printed page 3.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+99         
+100        
+101        %m(yd1, eta2, "2. Comparative", PRED2);
+
+
+NOTE: Convergence criterion (GCONV=1E-8) satisfied.
+NOTE: The data set WORK.PRED2 has 25 observations and 20 variables.
+NOTE: The PROCEDURE NLMIXED printed pages 4-5.
+NOTE: PROCEDURE NLMIXED used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.04 seconds
+      
+
+102        
+103        data PRED2;
+104          set PRED2;
+105          p2 = 1/(1+exp(-eta2));
+106          p2l = 1/(1+exp(-lower));
+107          p2u = 1/(1+exp(-upper));
+108          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED2.
+NOTE: The data set WORK.PRED2 has 25 observations and 23 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+109        
+110        proc sort data=PRED2; by n id; run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED2.
+NOTE: The data set WORK.PRED2 has 25 observations and 23 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+111        proc print data=PRED2;
+112          var id n p2raw p2 p2l p2u;
+113          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED2.
+NOTE: The PROCEDURE PRINT printed page 6.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+5 The SAS System                                                 15:32 Friday, January 27, 2023
+
+      
+
+114        
+115        data PRED;
+116          merge PRED1 PRED2;
+117          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED1.
+NOTE: There were 25 observations read from the data set WORK.PRED2.
+NOTE: The data set WORK.PRED has 25 observations and 27 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+118        
+119        title2 "Both";
+120        proc print data=PRED;
+121          var id n p1raw p1 p1l p1u p2raw p2 p2l p2u;
+122          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED.
+NOTE: The PROCEDURE PRINT printed page 7.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.10 seconds
+      cpu time            0.68 seconds
+      
+g004.sas: Separate mixed models for rsfMRI and comparative                                    1
+1. rsfMRI                                                        15:32 Friday, January 27, 2023
+
+The NLMIXED Procedure
+
+                         Specifications
+
+Data Set                                    WORK.A              
+Dependent Variable                          y1d                 
+Distribution for Dependent Variable         Binomial            
+Random Effects                              u                   
+Distribution for Random Effects             Normal              
+Subject Variable                            id                  
+Optimization Technique                      Dual Quasi-Newton   
+Integration Method                          Adaptive Gaussian   
+                                            Quadrature          
+
+
+               Dimensions
+
+Observations Used                     25
+Observations Not Used                  0
+Total Observations                    25
+Subjects                              25
+Max Obs per Subject                    1
+Parameters                             2
+Quadrature Points                     25
+
+
+         Initial Parameters
+ 
+                           Negative
+                                Log
+    beta    log_sigma    Likelihood
+
+     2.1         0.33    46.5471807
+
+
+                          Iteration History
+ 
+                      Negative
+                           Log                   Maximum
+Iteration Calls     Likelihood    Difference    Gradient       Slope
+
+       1      5     46.3972952      0.149885     0.99921    -10.7322
+       2      8     46.3397697      0.057525     0.11979    -6.36809
+       3     10     46.3392704      0.000499    0.007571    -0.00106
+       4     12     46.3392688      1.649E-6    0.000069    -3.31E-6
+       5     14     46.3392688      8.79E-10    0.000011    -1.54E-9
+
+
+          NOTE: GCONV convergence criterion satisfied.          
+
+
+             Fit Statistics
+
+-2 Log Likelihood                   92.7
+AIC (smaller is better)             96.7
+AICC (smaller is better)            97.2
+BIC (smaller is better)             99.1
+
+
+g004.sas: Separate mixed models for rsfMRI and comparative                                    2
+1. rsfMRI                                                        15:32 Friday, January 27, 2023
+
+The NLMIXED Procedure
+
+                                    Parameter Estimates
+ 
+                       Standard                                  95% Confidence
+Parameter   Estimate      Error     DF   t Value   Pr > |t|          Limits         Gradient
+
+beta          2.3741     0.4890     24      4.85     <.0001     1.3648     3.3834   -8.17E-6
+log_sigma     0.4625     0.2667     24      1.73     0.0957   -0.08791     1.0129   -0.00001
+
+
+Covariance Matrix of Parameter Estimates
+ 
+                 beta    log_sigma
+
+beta           0.2391      0.07167
+log_sigma     0.07167      0.07112
+
+
+Correlation Matrix of Parameter Estimates
+ 
+                beta    log_sigma
+
+beta          1.0000       0.5495
+log_sigma     0.5495       1.0000
+g004.sas: Separate mixed models for rsfMRI and comparative                                    3
+1. rsfMRI                                                        15:32 Friday, January 27, 2023
+
+Obs    id                   n     p1raw        p1        p1l        p1u
+
+  1    Anzellotti 2010      1    1.00000    0.92796    0.34818    0.99679
+  2    Song 2006            2    1.00000    0.93665    0.41690    0.99674
+  3    Wang 2007            2    1.00000    0.93665    0.41690    0.99674
+  4    Tavares 2017         3    1.00000    0.94297    0.47123    0.99675
+  5    Weaver 2013          4    0.75000    0.82892    0.36427    0.97617
+  6    Gnanadas 2017        6    0.83333    0.86658    0.46774    0.97959
+  7    Morgan 2003          6    1.00000    0.95500    0.58313    0.99690
+  8    Stufflebeam 2011     6    0.83333    0.86658    0.46774    0.97959
+  9    Zhao 2019            6    1.00000    0.95500    0.58313    0.99690
+ 10    vanHoudt 2015        7    1.00000    0.95772    0.60976    0.99696
+ 11    Jann 2008            8    1.00000    0.96007    0.63289    0.99703
+ 12    Kang 2003            8    1.00000    0.96007    0.63289    0.99703
+ 13    Hunyadi 2014        10    0.70000    0.75048    0.42928    0.92323
+ 14    Yang 2015           11    1.00000    0.96549    0.68722    0.99720
+ 15    Hunyadi 2015b       12    1.00000    0.96692    0.70163    0.99726
+ 16    Hunyadi 2015a       18    0.61111    0.64979    0.40951    0.83233
+ 17    Su 2015             21    1.00000    0.97537    0.78675    0.99765
+ 18    Barron 2014         23    1.00000    0.97660    0.79905    0.99772
+ 19    Lee 2014            29    0.79310    0.80608    0.62055    0.91354
+ 20    Reyes 2016          34    0.91176    0.91216    0.76228    0.97112
+ 21    Boerwinkle 2017     36    0.94444    0.94024    0.80411    0.98369
+ 22    Chen 2017           42    0.76190    0.77276    0.61810    0.87723
+ 23    Bettus 2010         44    0.59091    0.60834    0.45295    0.74448
+ 24    Khoo 2019           49    0.48980    0.50873    0.36596    0.65008
+ 25    Boerwinkle 2019     64    0.39063    0.40765    0.28984    0.53713
+g004.sas: Separate mixed models for rsfMRI and comparative                                    4
+2. Comparative                                                   15:32 Friday, January 27, 2023
+
+The NLMIXED Procedure
+
+                         Specifications
+
+Data Set                                    WORK.A              
+Dependent Variable                          yd1                 
+Distribution for Dependent Variable         Binomial            
+Random Effects                              u                   
+Distribution for Random Effects             Normal              
+Subject Variable                            id                  
+Optimization Technique                      Dual Quasi-Newton   
+Integration Method                          Adaptive Gaussian   
+                                            Quadrature          
+
+
+               Dimensions
+
+Observations Used                     25
+Observations Not Used                  0
+Total Observations                    25
+Subjects                              25
+Max Obs per Subject                    1
+Parameters                             2
+Quadrature Points                     25
+
+
+         Initial Parameters
+ 
+                           Negative
+                                Log
+    beta    log_sigma    Likelihood
+
+     2.1         0.33    48.4687264
+
+
+                          Iteration History
+ 
+                      Negative
+                           Log                   Maximum
+Iteration Calls     Likelihood    Difference    Gradient       Slope
+
+       1      5     48.3458543      0.122872     1.13705    -9.72288
+       2      8     48.2771755      0.068679     0.12540    -7.76176
+       3     10     48.2763505      0.000825    0.010710    -0.00175
+       4     12     48.2763433      7.163E-6    0.000445    -0.00001
+       5     14     48.2763433      6.354E-9    1.161E-6    -1.27E-8
+
+
+          NOTE: GCONV convergence criterion satisfied.          
+
+
+             Fit Statistics
+
+-2 Log Likelihood                   96.6
+AIC (smaller is better)            100.6
+AICC (smaller is better)           101.1
+BIC (smaller is better)            103.0
+
+
+g004.sas: Separate mixed models for rsfMRI and comparative                                    5
+2. Comparative                                                   15:32 Friday, January 27, 2023
+
+The NLMIXED Procedure
+
+                                    Parameter Estimates
+ 
+                       Standard                                  95% Confidence
+Parameter   Estimate      Error     DF   t Value   Pr > |t|          Limits         Gradient
+
+beta          1.8878     0.3625     24      5.21     <.0001     1.1395     2.6360   1.135E-6
+log_sigma     0.1986     0.2448     24      0.81     0.4253    -0.3068     0.7039   -1.16E-6
+
+
+Covariance Matrix of Parameter Estimates
+ 
+                 beta    log_sigma
+
+beta           0.1314      0.04238
+log_sigma     0.04238      0.05995
+
+
+Correlation Matrix of Parameter Estimates
+ 
+                beta    log_sigma
+
+beta          1.0000       0.4774
+log_sigma     0.4774       1.0000
+g004.sas: Separate mixed models for rsfMRI and comparative                                    6
+2. Comparative                                                   15:32 Friday, January 27, 2023
+
+Obs    id                   n     p2raw        p2        p2l        p2u
+
+  1    Anzellotti 2010      1    1.00000    0.88660    0.40054    0.98919
+  2    Song 2006            2    1.00000    0.89915    0.45920    0.98943
+  3    Wang 2007            2    1.00000    0.89915    0.45920    0.98943
+  4    Tavares 2017         3    1.00000    0.90854    0.50567    0.98974
+  5    Weaver 2013          4    1.00000    0.91591    0.54359    0.99006
+  6    Gnanadas 2017        6    0.83333    0.85026    0.49613    0.97037
+  7    Morgan 2003          6    1.00000    0.92691    0.60219    0.99067
+  8    Stufflebeam 2011     6    1.00000    0.92691    0.60219    0.99067
+  9    Zhao 2019            6    1.00000    0.92691    0.60219    0.99067
+ 10    vanHoudt 2015        7    1.00000    0.93116    0.62543    0.99096
+ 11    Jann 2008            8    1.00000    0.93483    0.64573    0.99122
+ 12    Kang 2003            8    0.87500    0.87222    0.55921    0.97350
+ 13    Hunyadi 2014        10    0.70000    0.75224    0.44967    0.91858
+ 14    Yang 2015           11    0.81818    0.83462    0.55218    0.95382
+ 15    Hunyadi 2015b       12    0.75000    0.78365    0.50512    0.92782
+ 16    Hunyadi 2015a       18    0.61111    0.65729    0.42286    0.83390
+ 17    Su 2015             21    1.00000    0.95929    0.78442    0.99349
+ 18    Barron 2014         23    0.91304    0.90301    0.72093    0.97106
+ 19    Lee 2014            29    0.89655    0.89149    0.72839    0.96179
+ 20    Reyes 2016          34    0.91176    0.90461    0.75906    0.96616
+ 21    Boerwinkle 2017     36    0.80556    0.81332    0.65375    0.90953
+ 22    Chen 2017           42    0.85714    0.85850    0.71910    0.93498
+ 23    Bettus 2010         44    0.50000    0.52718    0.37684    0.67275
+ 24    Khoo 2019           49    0.46939    0.49553    0.35461    0.63716
+ 25    Boerwinkle 2019     64    0.35938    0.38416    0.26918    0.51373
+g004.sas: Separate mixed models for rsfMRI and comparative                                    7
+Both                                                             15:32 Friday, January 27, 2023
+
+Obs id                n  p1raw     p1     p1l     p1u    p2raw     p2     p2l     p2u
+
+  1 Anzellotti 2010   1 1.00000 0.92796 0.34818 0.99679 1.00000 0.88660 0.40054 0.98919
+  2 Song 2006         2 1.00000 0.93665 0.41690 0.99674 1.00000 0.89915 0.45920 0.98943
+  3 Wang 2007         2 1.00000 0.93665 0.41690 0.99674 1.00000 0.89915 0.45920 0.98943
+  4 Tavares 2017      3 1.00000 0.94297 0.47123 0.99675 1.00000 0.90854 0.50567 0.98974
+  5 Weaver 2013       4 0.75000 0.82892 0.36427 0.97617 1.00000 0.91591 0.54359 0.99006
+  6 Gnanadas 2017     6 0.83333 0.86658 0.46774 0.97959 0.83333 0.85026 0.49613 0.97037
+  7 Morgan 2003       6 1.00000 0.95500 0.58313 0.99690 1.00000 0.92691 0.60219 0.99067
+  8 Stufflebeam 2011  6 0.83333 0.86658 0.46774 0.97959 1.00000 0.92691 0.60219 0.99067
+  9 Zhao 2019         6 1.00000 0.95500 0.58313 0.99690 1.00000 0.92691 0.60219 0.99067
+ 10 vanHoudt 2015     7 1.00000 0.95772 0.60976 0.99696 1.00000 0.93116 0.62543 0.99096
+ 11 Jann 2008         8 1.00000 0.96007 0.63289 0.99703 1.00000 0.93483 0.64573 0.99122
+ 12 Kang 2003         8 1.00000 0.96007 0.63289 0.99703 0.87500 0.87222 0.55921 0.97350
+ 13 Hunyadi 2014     10 0.70000 0.75048 0.42928 0.92323 0.70000 0.75224 0.44967 0.91858
+ 14 Yang 2015        11 1.00000 0.96549 0.68722 0.99720 0.81818 0.83462 0.55218 0.95382
+ 15 Hunyadi 2015b    12 1.00000 0.96692 0.70163 0.99726 0.75000 0.78365 0.50512 0.92782
+ 16 Hunyadi 2015a    18 0.61111 0.64979 0.40951 0.83233 0.61111 0.65729 0.42286 0.83390
+ 17 Su 2015          21 1.00000 0.97537 0.78675 0.99765 1.00000 0.95929 0.78442 0.99349
+ 18 Barron 2014      23 1.00000 0.97660 0.79905 0.99772 0.91304 0.90301 0.72093 0.97106
+ 19 Lee 2014         29 0.79310 0.80608 0.62055 0.91354 0.89655 0.89149 0.72839 0.96179
+ 20 Reyes 2016       34 0.91176 0.91216 0.76228 0.97112 0.91176 0.90461 0.75906 0.96616
+ 21 Boerwinkle 2017  36 0.94444 0.94024 0.80411 0.98369 0.80556 0.81332 0.65375 0.90953
+ 22 Chen 2017        42 0.76190 0.77276 0.61810 0.87723 0.85714 0.85850 0.71910 0.93498
+ 23 Bettus 2010      44 0.59091 0.60834 0.45295 0.74448 0.50000 0.52718 0.37684 0.67275
+ 24 Khoo 2019        49 0.48980 0.50873 0.36596 0.65008 0.46939 0.49553 0.35461 0.63716
+ 25 Boerwinkle 2019  64 0.39063 0.40765 0.28984 0.53713 0.35938 0.38416 0.26918 0.51373
+

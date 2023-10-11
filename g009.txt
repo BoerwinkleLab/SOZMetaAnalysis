@@ -1,0 +1,185 @@
+[The stat concepts and the mindset when looking at the two model types]
+[This text can go into the INTRO or METHODS/Stat Methods or even an appendix]
+
+
+
+In the fixed-effecs model, each of the 24 studies comes from an
+underlying population of subjects.
+Thus there are 24 populations, and statistical inferences are only about 
+them. There is no population of studies. Any differences between studies 
+are systematic differences, not random variation. The patients within a study
+are all independent of each other, and also independent of patients in the other studies.
+For analyses that rely on large-sample theory, the sample size in each study (2x2 table) must 
+be 20 or more and there should be no margin with 0 count. Among the methods used here, 
+only the "exact" CI's for odds ratios do not require large samples. But small tables will generate
+very wide and nearly useless CI's.
+
+
+In the random-effecs model, the 24 studies come from an
+underlying population of studies. The main target of inference 
+is that population, primalrily the variation among studies. 
+Differences between populations are due to random variation.
+The patients within a study are all correlated with each other but 
+independent of patients in the other studies.
+
+
+
+Confusingly, the word "heterogeniety" is used in both models. 
+In the fixed-effects model, "heterogeniety" refers to the non-random
+systematic differences among studies (or populations).
+However, in the random-effects model, the same word refers to the random
+variation among the studies (or populations). This difference impacts
+the interpretation of hypothesis tests in these models.
+
+[RESULTS]
+
+
+The odds ratio is a common measure in epidemiology, often used 
+as an index of association between risk factors and disease outcomes.
+The odds ratio is used here to measure concordance or agreement
+between two modalities. The odds ratio is the ratio of the odds that modality A
+is positive when modality B is positive to the odds that modality A
+is positive when modality B is negative. An odds ratio of 1 means that 
+the modalities are independent; they neither agree nor
+disagree more than expected by just random chance.
+An odds ratio greater (less) than 1 means that
+the modalities tend to agree (disagree) more than 
+expected by just random chance.
+
+
+
+In the fixed-effects model, the hypothesis of homogeniety of
+the odds ratios states that the 24 odds ratios in the 24 studies are all equal.
+Testing this hypothesis requires an adequate sample size in each study. Thus,
+this analysis was restricted to studies with sample size of at least 20,
+and with no zero margins. This left 7 studies (n from 29 to 64, total n 298). 
+Using the likelihood ratio test in a log-linear model,
+the hypothesis of homogeniety was
+rejected in favor of heterogeniety (chi-squared=27.61, df=6, p= 0.00011).
+The conclusion is that there is significant heterogeniety of the odds ratios 
+among those 7 studies. Under the assumption of homogeniety, the
+estimate of the common odds ratio was 8.0 (95% CI: 4.3 to 15). However,
+the usefulness of this single estimate is highly questionable because there is
+strong evidence against the existence of a common odds ratio.
+
+
+
+
+[This table is not for the paper]
+
+Here is the list of 7:
+
+id               y00           y01           y10           y11   n   
+
+Lee 2014           1             5             2            21   29  
+Reyes 2016         0             3             3            28   34  
+Boerwinkle 2017    0             2             7            27   36  
+Chen 2017          4             6             2            30   42  
+Bettus 2010       12             6            10            16   44  
+Khoo 2019         18             7             8            16   49  
+Boerwinkle 2019   38             1             3            22   64  
+
+
+
+
+[Figure 2 legend]
+
+Figure 2: Fixed Effects Analysis
+Each study was summarized into a 2x2 table and
+conditional likelihood-based estimates were obtained if there are no zero cells.
+In five studies, one cell was zero and median unbiased estimates were obtained. 
+If any margin is zero, the study is non-informative. This left the 10 studies
+shown in this figure. 
+As there is very strong evidence against the existence of a common odds ratio,
+no overall estimate is presented as its usefulness is highly questionable.
+
+The last line should be removed.
+
+
+[RESULTS related to  Figure 3]
+
+The random-effects model includes a random study-specific log odds ratio measuring
+the concordance between fsMRI and the comparaive.
+Predicted study-specific log odds ratios, posterior mode and prediction intervals are depicted.
+The study-specific log odds ratios, assumed normally distributed,
+are estimated to have a mean (and median) of 0.007 and
+a standard deviation of 3. This implies that
+the estimated median odds ratio is 1.007, while 
+the estimated mean odds ratio is 90.
+This difference between the mean and median is due to the right-skewness of
+the log-normal distribution of the odds ratios.
+
+
+
+[Stat METHODS]
+
+In the fixed-effects analysis, conditional likelihood-based estimates were
+obtained if all four cells are non-zero.
+In five studies, one cell was zero and median unbiased estimates were obtained. 
+If any margin is zero, the study is non-informative. This left 10 studies
+for odds ratio estimation under the fixed-effects model.
+
+
+[Table 2]
+         Conditional MLE log odds ratio estimates
+
+                                            95% Confidence
+                       n   Estimate              Limits           p-Value
+
+  1  Gnanadas 2017      6    1.61  *      -Infinity      4.55       0.8333
+  2  Hunyadi 2014      10   -0.74  *      -Infinity      1.40       0.2917
+  3  Hunyadi 2015a     18   -2.52  *      -Infinity     -0.66       0.0104
+  4  Lee 2014          29    0.71          -3.52        3.85       1.0000
+  5  Reyes 2016        34    1.00  *      -Infinity      3.08       0.7512
+  6  Boerwinkle 2017   36    0.53  *      -Infinity      2.70       0.6444
+  7  Chen 2017         42    2.22           0.06        4.82       0.0429
+  8  Bettus 2010       44    1.14          -0.25        2.62       0.1243
+  9  Khoo 2019         49    1.60           0.27        3.04       0.0145
+ 10  Boerwinkle 2019   64    5.40           3.18        9.37       <.0001
+
+NOTE: * indicates a median unbiased estimate.
+
+
+Before rounding:
+
+
+                                          95% Confidence
+                        n   Estimate              Limits           p-Value
+
+  1  Gnanadas 2017       6   1.6094*      -Infinity      4.5539     0.8333
+  2  Hunyadi 2014       10  -0.7387*      -Infinity      1.3978     0.2917
+  3  Hunyadi 2015a      18  -2.5182*      -Infinity     -0.6633     0.0104
+  4  Lee 2014           29   0.7118        -3.5162      3.8527     1.0000
+  5  Reyes 2016         34   0.9992*      -Infinity      3.0848     0.7512
+  6  Boerwinkle 2017    36   0.5311*      -Infinity      2.7036     0.6444
+  7  Chen 2017          42   2.2239         0.0587      4.8235     0.0429
+  8  Bettus 2010        44   1.1354        -0.2529      2.6229     0.1243
+  9  Khoo 2019          49   1.6003         0.2741      3.0365     0.0145
+ 10  Boerwinkle 2019    64   5.4015         3.1784      9.3729     <.0001
+
+
+Analysis of "modality"
+======================
+(this text was added on Sep 7, 2023)
+
+Modality is coded 0 to 4, with frequencies 4, 8, 2, 5, 6, respectively.
+The fixed-effects analysis given above was restricted to the 7 studies with n>=20 and no zero margins.
+Here we continue with the same structure and the same set of 7 studies with 298 patients.
+The modalities for those 7 studies were 0,1,1,3,3,4,4.
+A sequence of log-linear models for the odds ratios was fitted. 
+The analysis of deviance table is:
+
+Model		df	dev
+1		6	27.61
+1+modality	3	14.60
+1+study		0	0 [the saturated model]	
+Interpretation:
+Among 7 studies there are 6 contrasts (differences) between studies.
+Among 4 modalities there are 3 contrasts between modalities.
+The total deviance of 27.61 reflects the differences among the 7 studies.
+Those differences can be decomposed into differences between modalities
+(27.61-14.60=13.01, df=3, p=0.0046) and differences between studies
+using the same modality (14.60, df=3, p=0.0022). That is, there are statistically 
+significant differences among modalities and also among studies with the same modality. 
+
+

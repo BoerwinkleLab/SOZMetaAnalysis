@@ -1,0 +1,355 @@
+1                                        The SAS System        19:47 Thursday, September 7, 2023
+
+WARNING: One or more libraries specified in the concatenated library SASHELP 
+WARNING: do not exist.  These libraries were removed from the concatenation.
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7) 
+      Licensed to UNIVERSITY OF NORTH CAROLINA CHAPEL HILL - SFA T&R, Site 70022629.
+NOTE: This session is executing on the W32_10PRO  platform.
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ W32_10PRO WIN 10.0.19041  Workstation
+
+NOTE: SAS initialization used:
+      real time           0.40 seconds
+      cpu time            0.15 seconds
+      
+
+NOTE: AUTOEXEC processing beginning; file is c:\progs\cmd\autoexec.sas.
+
+
+NOTE: AUTOEXEC processing completed.
+
+1          %let progname = g001.sas;
+2          ods pdf file = "g001.pdf"  style=styles.journal;
+NOTE: Writing ODS PDF output to DISK destination "C:\prj\TRACS\Gillette\g001.pdf", 
+      printer "PDF".
+3          
+4          * input: ma_data2.csv
+5          * does: - Descriptive
+6          *********************************************;
+7          libname X "";
+NOTE: Libref X was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: C:\prj\TRACS\Gillette\
+8          title "&progname:";
+9          %let csv = ma_data2.csv;
+10         *********************************************;
+11         
+12         title2 "&csv";
+13         proc import datafile="&csv" out=A replace;
+14           guessingrows =  max;
+15           run;
+
+16          /**********************************************************************
+17          *   PRODUCT:   SAS
+18          *   VERSION:   9.4
+19          *   CREATOR:   External File Interface
+20          *   DATE:      07SEP23
+21          *   DESC:      Generated SAS Datastep Code
+22          *   TEMPLATE SOURCE:  (None Specified.)
+23          ***********************************************************************/
+24             data WORK.A    ;
+25             %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+26             infile 'ma_data2.csv' delimiter = ',' MISSOVER DSD lrecl=32767 firstobs=2 ;
+2 The SAS System                                              19:47 Thursday, September 7, 2023
+
+27                informat id $16. ;
+28                informat modality best32. ;
+29                informat modality_type best32. ;
+30                informat a best32. ;
+31                informat b best32. ;
+32                informat c best32. ;
+33                informat d best32. ;
+34                format id $16. ;
+35                format modality best12. ;
+36                format modality_type best12. ;
+37                format a best12. ;
+38                format b best12. ;
+39                format c best12. ;
+40                format d best12. ;
+41             input
+42                         id  $
+43                         modality
+44                         modality_type
+45                         a
+46                         b
+47                         c
+48                         d
+49             ;
+50             if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro
+50       ! variable */
+51             run;
+
+NOTE: The infile 'ma_data2.csv' is:
+      Filename=C:\prj\TRACS\Gillette\ma_data2.csv,
+      RECFM=V,LRECL=32767,File Size (bytes)=684,
+      Last Modified=27Jan2023:21:40:54,
+      Create Time=25Jan2023:15:33:50
+
+NOTE: 25 records were read from the infile 'ma_data2.csv'.
+      The minimum record length was 20.
+      The maximum record length was 29.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+25 rows created in WORK.A from ma_data2.csv.
+  
+  
+  
+NOTE: WORK.A data set was successfully created.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.11 seconds
+      cpu time            0.09 seconds
+      
+
+52         
+53         data A;
+54           set A (rename=(a=y11 b=y10 c=y01 d=y00)); * rows=rsfMRI, cols=comparative;
+55         
+56           n = y00 + y01 + y10 + y11;
+57           y0d = y00 + y01;
+58           yd0 = y00 + y10;
+59           y1d = y10 + y11;
+60           yd1 = y01 + y11;
+61         
+3 The SAS System                                              19:47 Thursday, September 7, 2023
+
+62           if ( 5 = modality) then modality = 1; else
+63           if (14 = modality) then modality = 4;
+64           label modality = "Modality (0/1/2/3/4)";
+65         
+66           zero_margins = (0 = y0d) + (0 = y1d) + (0 = yd0) + (0 = yd1);
+67           label zero_margins = "Count of zero margins";
+68         
+69           label y11 = "a";
+70           label y10 = "b";
+71           label y01 = "c";
+72           label y00 = "d";
+73         
+74           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 13 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+75         
+76         proc contents data = A order=varnum noprint out=C(rename= name=variable); run;
+
+NOTE: The data set WORK.C has 13 observations and 41 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+77         title2 "Variables";
+78         proc print data=C;  var label type length format; id variable; run;
+
+NOTE: There were 13 observations read from the data set WORK.C.
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+79         
+80         proc sort data=A; by id n; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 13 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+81         title2 "Sorted by id";
+82         proc print    data=A;
+83           var  id y00 y01 y10 y11 n zero_margins modality;
+84           sum     y00 y01 y10 y11 n;
+85           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 2.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+4 The SAS System                                              19:47 Thursday, September 7, 2023
+
+86         
+87         proc sort data=A; by n id; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 13 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+88         title2 "Sorted by n";
+89         proc print    data=A;
+90           var  id y00 y01 y10 y11 n zero_margins;
+91           sum     y00 y01 y10 y11 n;
+92           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 3.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+93         
+94         title2 "Modality";
+95         proc freq data=A;
+96           tables modality * modality_type / missing nocol norow nopercent;
+97           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE FREQ printed page 4.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           0.84 seconds
+      cpu time            0.51 seconds
+      
+g001.sas:                                                 19:47 Thursday, September 7, 2023   1
+Variables
+
+variable         LABEL                    TYPE    LENGTH    FORMAT
+
+id                                          2       16       $    
+modality         Modality (0/1/2/3/4)       1        8       BEST 
+modality_type                               1        8       BEST 
+n                                           1        8            
+y00              d                          1        8       BEST 
+y01              c                          1        8       BEST 
+y10              b                          1        8       BEST 
+y11              a                          1        8       BEST 
+y0d                                         1        8            
+y1d                                         1        8            
+yd0                                         1        8            
+yd1                                         1        8            
+zero_margins     Count of zero margins      1        8            
+g001.sas:                                                 19:47 Thursday, September 7, 2023   2
+Sorted by id
+
+                                                                            z
+                                                                            e
+                                                                            r
+                                                                            o
+                                                                            _       m
+                                                                            m       o
+                                                                            a       d
+                                                                            r       a
+                                                                            g       l
+ O                        y            y            y            y          i       i
+ b        i               0            0            1            1          n       t
+ s        d               0            1            0            1       n  s       y
+
+ 1 Anzellotti 2010             0            0            0            1   1 2            1
+ 2 Barron 2014                 0            0            2           21  23 1            4
+ 3 Bettus 2010                12            6           10           16  44 0            1
+ 4 Boerwinkle 2017             0            2            7           27  36 0            4
+ 5 Boerwinkle 2019            38            1            3           22  64 0            4
+ 6 Chen 2017                   4            6            2           30  42 0            0
+ 7 Gnanadas 2017               0            1            1            4   6 0            3
+ 8 Hunyadi 2014                0            3            3            4  10 0            2
+ 9 Hunyadi 2015a               0            7            7            4  18 0            4
+10 Hunyadi 2015b               0            0            3            9  12 1            1
+11 Jann 2008                   0            0            0            8   8 2            1
+12 Kang 2003                   0            0            1            7   8 1            2
+13 Khoo 2019                  18            7            8           16  49 0            3
+14 Lee 2014                    1            5            2           21  29 0            3
+15 Morgan 2003                 0            0            0            6   6 2            4
+16 Reyes 2016                  0            3            3           28  34 0            1
+17 Song 2006                   0            0            0            2   2 2            0
+18 Stufflebeam 2011            0            1            0            5   6 1            3
+19 Su 2015                     0            0            0           21  21 2            1
+20 Tavares 2017                0            0            0            3   3 2            1
+21 Wang 2007                   0            0            0            2   2 2            0
+22 Weaver 2013                 0            1            0            3   4 1            3
+23 Yang 2015                   0            0            2            9  11 1            0
+24 Zhao 2019                   0            0            0            6   6 2            1
+25 vanHoudt 2015               0            0            0            7   7 2            4
+                    ============ ============ ============ ============ ===
+                              73           43           54          282 452               
+g001.sas:                                                 19:47 Thursday, September 7, 2023   3
+Sorted by n
+
+                                                                                     zero_
+Obs  id                         y00           y01           y10           y11    n  margins
+
+  1  Anzellotti 2010              0             0             0             1    1     2   
+  2  Song 2006                    0             0             0             2    2     2   
+  3  Wang 2007                    0             0             0             2    2     2   
+  4  Tavares 2017                 0             0             0             3    3     2   
+  5  Weaver 2013                  0             1             0             3    4     1   
+  6  Gnanadas 2017                0             1             1             4    6     0   
+  7  Morgan 2003                  0             0             0             6    6     2   
+  8  Stufflebeam 2011             0             1             0             5    6     1   
+  9  Zhao 2019                    0             0             0             6    6     2   
+ 10  vanHoudt 2015                0             0             0             7    7     2   
+ 11  Jann 2008                    0             0             0             8    8     2   
+ 12  Kang 2003                    0             0             1             7    8     1   
+ 13  Hunyadi 2014                 0             3             3             4   10     0   
+ 14  Yang 2015                    0             0             2             9   11     1   
+ 15  Hunyadi 2015b                0             0             3             9   12     1   
+ 16  Hunyadi 2015a                0             7             7             4   18     0   
+ 17  Su 2015                      0             0             0            21   21     2   
+ 18  Barron 2014                  0             0             2            21   23     1   
+ 19  Lee 2014                     1             5             2            21   29     0   
+ 20  Reyes 2016                   0             3             3            28   34     0   
+ 21  Boerwinkle 2017              0             2             7            27   36     0   
+ 22  Chen 2017                    4             6             2            30   42     0   
+ 23  Bettus 2010                 12             6            10            16   44     0   
+ 24  Khoo 2019                   18             7             8            16   49     0   
+ 25  Boerwinkle 2019             38             1             3            22   64     0   
+                       ============  ============  ============  ============  ===
+                                 73            43            54           282  452         
+g001.sas:                                                 19:47 Thursday, September 7, 2023   4
+Modality
+
+The FREQ Procedure
+
+Table of modality by modality_type
+
+modality(Modality (0/1/2/3/4))     modality_type
+
+Frequency|       1|       2|       4|      24|     123|  Total
+---------+--------+--------+--------+--------+--------+
+       0 |      4 |      0 |      0 |      0 |      0 |      4
+---------+--------+--------+--------+--------+--------+
+       1 |      0 |      8 |      0 |      0 |      0 |      8
+---------+--------+--------+--------+--------+--------+
+       2 |      0 |      0 |      0 |      0 |      2 |      2
+---------+--------+--------+--------+--------+--------+
+       3 |      0 |      5 |      0 |      0 |      0 |      5
+---------+--------+--------+--------+--------+--------+
+       4 |      0 |      0 |      5 |      1 |      0 |      6
+---------+--------+--------+--------+--------+--------+
+Total           4       13        5        1        2       25
+

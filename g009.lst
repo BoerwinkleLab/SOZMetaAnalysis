@@ -1,0 +1,813 @@
+1                                        The SAS System             14:15 Tuesday, July 25, 2023
+
+WARNING: One or more libraries specified in the concatenated library SASHELP 
+WARNING: do not exist.  These libraries were removed from the concatenation.
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7) 
+      Licensed to UNIVERSITY OF NORTH CAROLINA CHAPEL HILL - SFA T&R, Site 70022629.
+NOTE: This session is executing on the W32_10PRO  platform.
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ W32_10PRO WIN 10.0.19041  Workstation
+
+NOTE: SAS initialization used:
+      real time           0.40 seconds
+      cpu time            0.18 seconds
+      
+
+NOTE: AUTOEXEC processing beginning; file is c:\progs\cmd\autoexec.sas.
+
+
+NOTE: AUTOEXEC processing completed.
+
+1          %let progname = g009.sas;
+2          ods pdf file = "g009.pdf"  style=styles.journal;
+NOTE: Writing ODS PDF output to DISK destination "C:\prj\TRACS\Gillette\g009.pdf", 
+      printer "PDF".
+3          
+4          * input: ma_data2.csv
+5          * does: - Fixed effects analysis of odds ratios
+6                    Exact confidence intervals for odds ratios
+7                    No 0 margins, of course
+8          *********************************************;
+9          libname X "";
+NOTE: Libref X was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: C:\prj\TRACS\Gillette\
+10         title "&progname: Exact confidence intervals for odds ratios (fixed effects)";
+11         %let csv = ma_data2.csv;
+12         *********************************************;
+13         
+14         title2 "&csv";
+15         proc import datafile="&csv" out=A replace;
+16           guessingrows =  max;
+17           run;
+
+18          /**********************************************************************
+19          *   PRODUCT:   SAS
+20          *   VERSION:   9.4
+21          *   CREATOR:   External File Interface
+22          *   DATE:      25JUL23
+23          *   DESC:      Generated SAS Datastep Code
+24          *   TEMPLATE SOURCE:  (None Specified.)
+25          ***********************************************************************/
+26             data WORK.A    ;
+2 The SAS System                                                   14:15 Tuesday, July 25, 2023
+
+27             %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+28             infile 'ma_data2.csv' delimiter = ',' MISSOVER DSD lrecl=32767 firstobs=2 ;
+29                informat id $16. ;
+30                informat modality best32. ;
+31                informat modality_type best32. ;
+32                informat a best32. ;
+33                informat b best32. ;
+34                informat c best32. ;
+35                informat d best32. ;
+36                format id $16. ;
+37                format modality best12. ;
+38                format modality_type best12. ;
+39                format a best12. ;
+40                format b best12. ;
+41                format c best12. ;
+42                format d best12. ;
+43             input
+44                         id  $
+45                         modality
+46                         modality_type
+47                         a
+48                         b
+49                         c
+50                         d
+51             ;
+52             if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro
+52       ! variable */
+53             run;
+
+NOTE: The infile 'ma_data2.csv' is:
+      Filename=C:\prj\TRACS\Gillette\ma_data2.csv,
+      RECFM=V,LRECL=32767,File Size (bytes)=684,
+      Last Modified=27Jan2023:21:40:54,
+      Create Time=25Jan2023:15:33:50
+
+NOTE: 25 records were read from the infile 'ma_data2.csv'.
+      The minimum record length was 20.
+      The maximum record length was 29.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+25 rows created in WORK.A from ma_data2.csv.
+  
+  
+  
+NOTE: WORK.A data set was successfully created.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+54         
+55         data A;
+56           set A (rename=(a=y11 b=y10 c=y01 d=y00)); * rows=rsfMRI, cols=comparative;
+57         
+58           n = y00 + y01 + y10 + y11;
+59           y0d = y00 + y01;
+60           yd0 = y00 + y10;
+61           y1d = y10 + y11;
+3 The SAS System                                                   14:15 Tuesday, July 25, 2023
+
+62           yd1 = y01 + y11;
+63           zero_margins = (0 = y0d) + (0 = y1d) + (0 = yd0) + (0 = yd1);
+64           if (0 = zero_margins);
+65           label y11 = "a";
+66           label y10 = "b";
+67           label y01 = "c";
+68           label y00 = "d";
+69           label y00 = "d";
+70           label zero_margins = "Count of zero margins";
+71           label id = "Study ID";
+72           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 10 observations and 13 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+73         
+74         proc sort data=A; by n id; run;
+
+NOTE: There were 10 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 10 observations and 13 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+75         title2 "Sorted by n";
+76         proc print    data=A;
+77           var  id n y00 y01 y10 y11  zero_margins;
+78           sum     n y00 y01 y10 y11  zero_margins;
+79           run;
+
+NOTE: There were 10 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.04 seconds
+      
+
+80         *********************************************;
+81         data B;
+82           set A;
+83           row=1; y = y00; m=y0d; output;
+84           row=2; y = y10; m=y1d; output;
+85           run;
+
+NOTE: There were 10 observations read from the data set WORK.A.
+NOTE: The data set WORK.B has 20 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+86         
+87         title2 "  ";
+88         proc logistic data=B exactonly;
+89           class n row / param=ref;
+90           model y/m = row;
+91           exact row / estimate=parm;    *  / estimate=odds;
+92           by n;   * all n's are different, already sorted by n;
+4 The SAS System                                                   14:15 Tuesday, July 25, 2023
+
+93           run;
+
+NOTE: There were 20 observations read from the data set WORK.B.
+NOTE: The PROCEDURE LOGISTIC printed pages 2-11.
+NOTE: PROCEDURE LOGISTIC used (Total process time):
+      real time           0.36 seconds
+      cpu time            0.18 seconds
+      
+
+94         
+95         endsas;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.11 seconds
+      cpu time            0.65 seconds
+      
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          1
+Sorted by n                                                        14:15 Tuesday, July 25, 2023
+
+                                                                                     zero_
+Obs  id                  n           y00           y01           y10           y11  margins
+
+  1  Gnanadas 2017       6             0             1             1             4     0   
+  2  Hunyadi 2014       10             0             3             3             4     0   
+  3  Hunyadi 2015a      18             0             7             7             4     0   
+  4  Lee 2014           29             1             5             2            21     0   
+  5  Reyes 2016         34             0             3             3            28     0   
+  6  Boerwinkle 2017    36             0             2             7            27     0   
+  7  Chen 2017          42             4             6             2            30     0   
+  8  Bettus 2010        44            12             6            10            16     0   
+  9  Khoo 2019          49            18             7             8            16     0   
+ 10  Boerwinkle 2019    64            38             1             3            22     0   
+                       ===  ============  ============  ============  ============  =======
+                       332            73            41            46           172     0   
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          2
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=6
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read               6
+Sum of Frequencies Used               6
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                1
+       2     Nonevent             5
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            0.2000   1.0000   0.5833
+         Probability      0.8333   1.0000   0.5833
+
+
+                       Exact Parameter Estimates
+ 
+                            Standard       95% Confidence
+Parameter      Estimate        Error           Limits           p-Value
+
+row       1      1.6094*           .   -Infinity      4.5539     0.8333
+
+NOTE: * indicates a median unbiased estimate and a one-sided p-value.
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          3
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=10
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              10
+Sum of Frequencies Used              10
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                3
+       2     Nonevent             7
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            1.6531   0.4750   0.3292
+         Probability      0.2917   0.4750   0.3292
+
+
+                       Exact Parameter Estimates
+ 
+                            Standard       95% Confidence
+Parameter      Estimate        Error           Limits           p-Value
+
+row       1     -0.7387*           .   -Infinity      1.3978     0.2917
+
+NOTE: * indicates a median unbiased estimate and a one-sided p-value.
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          4
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=18
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              18
+Sum of Frequencies Used              18
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                7
+       2     Nonevent            11
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            6.8843   0.0128   0.0076
+         Probability      0.0104   0.0128   0.0076
+
+
+                       Exact Parameter Estimates
+ 
+                            Standard       95% Confidence
+Parameter      Estimate        Error           Limits           p-Value
+
+row       1     -2.5182*           .   -Infinity     -0.6633     0.0104
+
+NOTE: * indicates a median unbiased estimate and a one-sided p-value.
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          5
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=29
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              29
+Sum of Frequencies Used              29
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                3
+       2     Nonevent            26
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            0.3148   1.0000   0.7923
+         Probability      0.4154   0.5153   0.3076
+
+
+                      Exact Parameter Estimates
+ 
+                           Standard       95% Confidence
+Parameter      Estimate       Error           Limits           p-Value
+
+row       1      0.7118      1.2909     -3.5162      3.8527     1.0000
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          6
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=34
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              34
+Sum of Frequencies Used              34
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                3
+       2     Nonevent            31
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            0.3091   1.0000   0.6244
+         Probability      0.7512   1.0000   0.6244
+
+
+                       Exact Parameter Estimates
+ 
+                            Standard       95% Confidence
+Parameter      Estimate        Error           Limits           p-Value
+
+row       1      0.9992*           .   -Infinity      3.0848     0.7512
+
+NOTE: * indicates a median unbiased estimate and a one-sided p-value.
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          7
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=36
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              36
+Sum of Frequencies Used              36
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                7
+       2     Nonevent            29
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            0.4970   1.0000   0.6778
+         Probability      0.6444   1.0000   0.6778
+
+
+                       Exact Parameter Estimates
+ 
+                            Standard       95% Confidence
+Parameter      Estimate        Error           Limits           p-Value
+
+row       1      0.5311*           .   -Infinity      2.7036     0.6444
+
+NOTE: * indicates a median unbiased estimate and a one-sided p-value.
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          8
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=42
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              42
+Sum of Frequencies Used              42
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event                6
+       2     Nonevent            36
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            6.9188   0.0214   0.0115
+         Probability      0.0199   0.0214   0.0115
+
+
+                      Exact Parameter Estimates
+ 
+                           Standard       95% Confidence
+Parameter      Estimate       Error           Limits           p-Value
+
+row       1      2.2239      0.9527      0.0587      4.8235     0.0429
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                          9
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=44
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              44
+Sum of Frequencies Used              44
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event               22
+       2     Nonevent            22
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            3.3077   0.1243   0.1008
+         Probability      0.0469   0.1243   0.1008
+
+
+                      Exact Parameter Estimates
+ 
+                           Standard       95% Confidence
+Parameter      Estimate       Error           Limits           p-Value
+
+row       1      1.1354      0.6338     -0.2529      2.6229     0.1243
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                         10
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=49
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              49
+Sum of Frequencies Used              49
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event               26
+       2     Nonevent            23
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score            7.2005   0.0101   0.0071
+         Probability     0.00606   0.0101   0.0071
+
+
+                      Exact Parameter Estimates
+ 
+                           Standard       95% Confidence
+Parameter      Estimate       Error           Limits           p-Value
+
+row       1      1.6003      0.6126      0.2741      3.0365     0.0145
+g009.sas: Exact confidence intervals for odds ratios (fixed effects)                         11
+                                                                   14:15 Tuesday, July 25, 2023
+
+n=64
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           2
+Number of Observations Used           2
+Sum of Frequencies Read              64
+Sum of Frequencies Used              64
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event               41
+       2     Nonevent            23
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score           47.5460   <.0001   <.0001
+         Probability    6.11E-13   <.0001   <.0001
+
+
+                      Exact Parameter Estimates
+ 
+                           Standard       95% Confidence
+Parameter      Estimate       Error           Limits           p-Value
+
+row       1      5.4015      1.1370      3.1784      9.3729     <.0001
+

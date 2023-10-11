@@ -1,0 +1,684 @@
+1          %let progname = g006.sas;
+2          ods pdf file = "g006.pdf"  style=styles.journal;
+NOTE: Writing ODS PDF output to DISK destination "C:\prj\TRACS\Gillette\g006.pdf", 
+      printer "PDF".
+3          
+4          * input: ma_data2.csv
+5          * xref:
+6          
+7          * does: - Mixed models
+8          
+9          *********************************************;
+10         libname X "";
+NOTE: Libref X was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: C:\prj\TRACS\Gillette\
+11         title "&progname: Random-effects analysis";
+12         %let csv = ma_data2.csv;
+13         *********************************************;
+14         
+15         title2 "&csv";
+16         proc import datafile="&csv" out=A replace;
+17           guessingrows =  max;
+18           run;
+
+19          /**********************************************************************
+20          *   PRODUCT:   SAS
+21          *   VERSION:   9.4
+22          *   CREATOR:   External File Interface
+23          *   DATE:      25JUL23
+24          *   DESC:      Generated SAS Datastep Code
+25          *   TEMPLATE SOURCE:  (None Specified.)
+26          ***********************************************************************/
+2 The SAS System                                                   21:02 Tuesday, July 25, 2023
+
+27             data WORK.A    ;
+28             %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+29             infile 'ma_data2.csv' delimiter = ',' MISSOVER DSD lrecl=32767 firstobs=2 ;
+30                informat id $16. ;
+31                informat modality best32. ;
+32                informat modality_type best32. ;
+33                informat a best32. ;
+34                informat b best32. ;
+35                informat c best32. ;
+36                informat d best32. ;
+37                format id $16. ;
+38                format modality best12. ;
+39                format modality_type best12. ;
+40                format a best12. ;
+41                format b best12. ;
+42                format c best12. ;
+43                format d best12. ;
+44             input
+45                         id  $
+46                         modality
+47                         modality_type
+48                         a
+49                         b
+50                         c
+51                         d
+52             ;
+53             if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro
+53       ! variable */
+54             run;
+
+NOTE: The infile 'ma_data2.csv' is:
+      Filename=C:\prj\TRACS\Gillette\ma_data2.csv,
+      RECFM=V,LRECL=32767,File Size (bytes)=684,
+      Last Modified=27Jan2023:21:40:54,
+      Create Time=25Jan2023:15:33:50
+
+NOTE: 25 records were read from the infile 'ma_data2.csv'.
+      The minimum record length was 20.
+      The maximum record length was 29.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+25 rows created in WORK.A from ma_data2.csv.
+  
+  
+  
+NOTE: WORK.A data set was successfully created.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.25 seconds
+      cpu time            0.03 seconds
+      
+
+55         
+56         data A;
+57           set A
+58             (rename=(a=y11 b=y10 c=y01 d=y00)); * rows=rsfMRI, cols=comparative;
+59         
+60           n = y00 + y01 + y10 + y11;
+61           if not missing(n);
+3 The SAS System                                                   21:02 Tuesday, July 25, 2023
+
+62           y1d = y10 + y11;
+63           yd1 = y01 + y11;
+64           keep id y00 y01 y10 y11 n;
+65           label y11 = "a";
+66           label y10 = "b";
+67           label y01 = "c";
+68           label y00 = "d";
+69           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+70         
+71         proc sort data=A; by n id; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 6 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+72         ******************************************************************;
+73         
+74         title2 "Three random effects per study";
+75         proc nlmixed data=A qpoints=25 cov corr ecov ecorr;
+76           parms
+77             beta1         2.3310
+78             beta2         1.8631
+79             beta3       0.006937
+80             log_g11       0.8691
+81             log_g22       0.3527
+82             log_g33       2.1988
+83           ;
+84         
+85           eta1 = u1 + beta1;
+86           eta2 = u2 + beta2;
+87           eta3 = u3 + beta3;
+88           nu1 = 1/(1+exp(-eta1));  * margin 1;
+89           nu2 = 1/(1+exp(-eta2));  * margin 2;
+90           psi = exp(eta3);         * odds ratio;
+91           g11 = exp(log_g11);      * variance 1;
+92           g22 = exp(log_g22);      * variance 2;
+93           g33 = exp(log_g33);      * variance 3;
+94         
+95           * Compute p11 (cell 'd' in the 2x2 table);
+96           a_ = 1 - psi;
+97           if (abs(a_) < 1e-6) then p11 = nu1*nu2;
+98           else do;
+99             b_  = 1 - a_ * (nu1 + nu2);
+100            c_  = -psi * nu1 * nu2;
+101            p_  = -0.5 * (b_ + sign(b_) * sqrt(b_**2 - 4*a_*c_));
+102            r1_ = p_ / a_;
+103            r2_ = c_ / p_;
+104            if (r2_ > 0) then p11=r2_; else p11=r1_;    * Mardia's root;
+105          end;
+106          p10 = nu1 - p11;
+107          p01 = nu2 - p11;
+108          p00 = 1 - (nu1 + p01);
+4 The SAS System                                                   21:02 Tuesday, July 25, 2023
+
+109          ll = y00*log(p00)+y01*log(p01)+y10*log(p10)+y11*log(p11);
+110        
+111          model y00 ~ general(ll);
+112          random u1 u2 u3 ~ normal([0,0,0],[g11, 0, g22, 0, 0, g33]) subject = id;
+113        
+114          estimate "g11:"  g11;
+115          estimate "g22:"  g22;
+116          estimate "g33:"  g33;
+117          ods output ParameterEstimates=PARMS  CovMatParmEst=COV ;
+118          predict  eta1  out=PRED1(rename= (pred=eta1 lower=eta1l upper=eta1u));
+119          predict  eta2  out=PRED2(rename= (pred=eta2 lower=eta2l upper=eta2u));
+120          predict  eta3  out=PRED3(rename= (pred=eta3 lower=eta3l upper=eta3u));
+121        
+122          run;
+
+NOTE: Convergence criterion (GCONV=1E-8) satisfied.
+NOTE: The data set WORK.COV has 6 observations and 8 variables.
+NOTE: The data set WORK.PARMS has 6 observations and 10 variables.
+NOTE: The data set WORK.PRED1 has 25 observations and 14 variables.
+NOTE: The data set WORK.PRED2 has 25 observations and 14 variables.
+NOTE: The data set WORK.PRED3 has 25 observations and 14 variables.
+NOTE: The PROCEDURE NLMIXED printed pages 1-3.
+NOTE: PROCEDURE NLMIXED used (Total process time):
+      real time           2:50.48
+      cpu time            2:48.79
+      
+
+123        
+124        proc print data=PRED1; run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED1.
+NOTE: The PROCEDURE PRINT printed page 4.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+125        proc print data=PRED2; run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED2.
+NOTE: The PROCEDURE PRINT printed page 5.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+126        proc print data=PRED3; run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED3.
+NOTE: The PROCEDURE PRINT printed page 6.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+127        
+128        data PRED;
+129          merge PRED1 PRED2 PRED3;
+130          p1 = 1/(1+exp(-eta1));
+131          p1l= 1/(1+exp(-eta1l));
+132          p1u= 1/(1+exp(-eta1u));
+133          p2 = 1/(1+exp(-eta2));
+134          p2l= 1/(1+exp(-eta2l));
+5 The SAS System                                                   21:02 Tuesday, July 25, 2023
+
+135          p2u= 1/(1+exp(-eta2u));
+136          oddsratio = exp(eta3);
+137          or95pil   = exp(eta3l);
+138          or95piu   = exp(eta3u);
+139          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED1.
+NOTE: There were 25 observations read from the data set WORK.PRED2.
+NOTE: There were 25 observations read from the data set WORK.PRED3.
+NOTE: The data set WORK.PRED has 25 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.00 seconds
+      
+
+140        
+141        title2 "Prediction";
+142        proc print data=PRED;
+143          var id n p1 p2 oddsratio p1l p1u p2l p2u or95pil or95piu;
+144          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED.
+NOTE: The PROCEDURE PRINT printed page 7.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+145        
+146        title2 "Prediction. eta3 is the log odds ratio";
+147        proc print data=PRED;
+148          var id n p1 p2 eta3      p1l p1u p2l p2u eta3l eta3u;
+149          run;
+
+NOTE: There were 25 observations read from the data set WORK.PRED.
+NOTE: The PROCEDURE PRINT printed page 8.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           2:52.30
+      cpu time            2:49.21
+      
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   1
+Three random effects per study
+
+The NLMIXED Procedure
+
+                         Specifications
+
+Data Set                                    WORK.A              
+Dependent Variable                          y00                 
+Distribution for Dependent Variable         General             
+Random Effects                              u1 u2 u3            
+Distribution for Random Effects             Normal              
+Subject Variable                            id                  
+Optimization Technique                      Dual Quasi-Newton   
+Integration Method                          Adaptive Gaussian   
+                                            Quadrature          
+
+
+               Dimensions
+
+Observations Used                     25
+Observations Not Used                  0
+Total Observations                    25
+Subjects                              25
+Max Obs per Subject                    1
+Parameters                             6
+Quadrature Points                     25
+
+
+                                Initial Parameters
+ 
+                                                                          Negative
+                                                                               Log
+   beta1       beta2       beta3     log_g11     log_g22     log_g33    Likelihood
+
+   2.331      1.8631    0.006937      0.8691      0.3527      2.1988    415.450772
+
+
+                          Iteration History
+ 
+                      Negative
+                           Log                   Maximum
+Iteration Calls     Likelihood    Difference    Gradient       Slope
+
+       1      6       415.4508       1.62E-8    0.000125    -0.00004
+       2     10       415.4508      9.67E-10    0.000066    -1.03E-6
+
+
+          NOTE: GCONV convergence criterion satisfied.          
+
+
+             Fit Statistics
+
+-2 Log Likelihood                  830.9
+AIC (smaller is better)            842.9
+AICC (smaller is better)           847.6
+BIC (smaller is better)            850.2
+
+
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   2
+Three random effects per study
+
+
+The NLMIXED Procedure
+
+                                    Parameter Estimates
+ 
+                       Standard                                  95% Confidence
+Parameter   Estimate      Error     DF   t Value   Pr > |t|          Limits         Gradient
+
+beta1         2.3310     0.4790     22      4.87     <.0001     1.3375     3.3244   -0.00006
+beta2         1.8631     0.3567     22      5.22     <.0001     1.1234     2.6027   -0.00007
+beta3       0.006939     1.2507     22      0.01     0.9956    -2.5868     2.6007   -1.62E-6
+log_g11       0.8691     0.5374     22      1.62     0.1201    -0.2454     1.9837   0.000030
+log_g22       0.3527     0.4923     22      0.72     0.4812    -0.6682     1.3736   0.000019
+log_g33       2.1988     0.8008     22      2.75     0.0118     0.5380     3.8597   -0.00003
+
+
+                   Covariance Matrix of Parameter Estimates
+ 
+              beta1       beta2       beta3     log_g11     log_g22     log_g33
+
+beta1        0.2295    0.005943    -0.03974      0.1422    0.008841    0.000977
+beta2      0.005943      0.1272    -0.02649    0.006804     0.08421    0.000869
+beta3      -0.03974    -0.02649      1.5642    -0.03087    -0.02811     -0.4254
+log_g11      0.1422    0.006804    -0.03087      0.2888     0.01141    -0.00084
+log_g22    0.008841     0.08421    -0.02811     0.01141      0.2423    -0.00085
+log_g33    0.000977    0.000869     -0.4254    -0.00084    -0.00085      0.6414
+
+
+                Correlation Matrix of Parameter Estimates
+ 
+             beta1      beta2      beta3    log_g11    log_g22    log_g33
+
+beta1       1.0000     0.0348    -0.0663     0.5524     0.0375     0.0025
+beta2       0.0348     1.0000    -0.0594     0.0355     0.4796     0.0030
+beta3      -0.0663    -0.0594     1.0000    -0.0459    -0.0457    -0.4247
+log_g11     0.5524     0.0355    -0.0459     1.0000     0.0431    -0.0019
+log_g22     0.0375     0.4796    -0.0457     0.0431     1.0000    -0.0022
+log_g33     0.0025     0.0030    -0.4247    -0.0019    -0.0022     1.0000
+
+
+                                    Additional Estimates
+ 
+                     Standard
+Label    Estimate       Error      DF    t Value    Pr > |t|    Alpha       Lower       Upper
+
+g11:       2.3848      1.2817      22       1.86      0.0762     0.05     -0.2732      5.0429
+g22:       1.4230      0.7005      22       2.03      0.0545     0.05    -0.02974      2.8757
+g33:       9.0143      7.2191      22       1.25      0.2249     0.05     -5.9572     23.9858
+
+
+Covariance Matrix of Additional Estimates
+ 
+Label        Cov1        Cov2        Cov3
+
+g11:       1.6427     0.03871    -0.01800
+g22:      0.03871      0.4907    -0.01096
+g33:     -0.01800    -0.01096     52.1156
+
+
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   3
+Three random effects per study
+
+The NLMIXED Procedure
+
+Correlation Matrix of Additional Estimates
+ 
+Label      Corr1      Corr2      Corr3
+
+g11:      1.0000     0.0431    -0.0019
+g22:      0.0431     1.0000    -0.0022
+g33:     -0.0019    -0.0022     1.0000
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   4
+Three random effects per study
+
+ 
+Obs   id                           y11             y10             y01             y00
+
+  1   Anzellotti 2010                1               0               0               0
+  2   Song 2006                      2               0               0               0
+  3   Wang 2007                      2               0               0               0
+  4   Tavares 2017                   3               0               0               0
+  5   Weaver 2013                    3               0               1               0
+  6   Gnanadas 2017                  4               1               1               0
+  7   Morgan 2003                    6               0               0               0
+  8   Stufflebeam 2011               5               0               1               0
+  9   Zhao 2019                      6               0               0               0
+ 10   vanHoudt 2015                  7               0               0               0
+ 11   Jann 2008                      8               0               0               0
+ 12   Kang 2003                      7               1               0               0
+ 13   Hunyadi 2014                   4               3               3               0
+ 14   Yang 2015                      9               2               0               0
+ 15   Hunyadi 2015b                  9               3               0               0
+ 16   Hunyadi 2015a                  4               7               7               0
+ 17   Su 2015                       21               0               0               0
+ 18   Barron 2014                   21               2               0               0
+ 19   Lee 2014                      21               2               5               1
+ 20   Reyes 2016                    28               3               3               0
+ 21   Boerwinkle 2017               27               7               2               0
+ 22   Chen 2017                     30               2               6               4
+ 23   Bettus 2010                   16              10               6              12
+ 24   Khoo 2019                     16               8               7              18
+ 25   Boerwinkle 2019               22               3               1              38
+
+                         StdErr
+Obs    n      eta1        Pred     DF     tValue      Probt     Alpha      eta1l      eta1u
+
+  1    1     2.50866    1.50555    22     1.66627    0.10984     0.05    -0.61367    5.63099
+  2    2     2.64316    1.43709    22     1.83924    0.07942     0.05    -0.33720    5.62351
+  3    2     2.64316    1.43709    22     1.83924    0.07942     0.05    -0.33720    5.62351
+  4    3     2.75260    1.38883    22     1.98196    0.06011     0.05    -0.12765    5.63285
+  5    4     1.58766    1.02996    22     1.54148    0.13746     0.05    -0.54834    3.72367
+  6    6     1.85827    0.95876    22     1.93819    0.06554     0.05    -0.13009    3.84662
+  7    6     2.99811    1.29828    22     2.30929    0.03070     0.05     0.30564    5.69059
+  8    6     1.87028    0.96785    22     1.93240    0.06629     0.05    -0.13692    3.87749
+  9    6     2.99811    1.29828    22     2.30929    0.03070     0.05     0.30564    5.69059
+ 10    7     3.06282    1.27758    22     2.39737    0.02544     0.05     0.41329    5.71235
+ 11    8     3.12175    1.25964    22     2.47829    0.02135     0.05     0.50942    5.73408
+ 12    8     3.13003    1.24763    22     2.50878    0.01998     0.05     0.54260    5.71747
+ 13   10     1.04014    0.67114    22     1.54980    0.13546     0.05    -0.35172    2.43200
+ 14   11     3.28084    1.20516    22     2.72232    0.01244     0.05     0.78148    5.78019
+ 15   12     3.32306    1.19492    22     2.78098    0.01090     0.05     0.84494    5.80119
+ 16   18     0.52171    0.47480    22     1.09881    0.28373     0.05    -0.46296    1.50639
+ 17   21     3.62048    1.13488    22     3.19018    0.00423     0.05     1.26688    5.97409
+ 18   23     3.67978    1.11506    22     3.30007    0.00326     0.05     1.36729    5.99227
+ 19   29     1.42168    0.45090    22     3.15300    0.00461     0.05     0.48658    2.35678
+ 20   34     2.33956    0.56622    22     4.13191    0.00044     0.05     1.16530    3.51382
+ 21   36     2.73953    0.64640    22     4.23810    0.00034     0.05     1.39897    4.08009
+ 22   42     1.22657    0.35674    22     3.43827    0.00235     0.05     0.48673    1.96640
+ 23   44     0.47179    0.30466    22     1.54860    0.13574     0.05    -0.16003    1.10362
+ 24   49     0.07620    0.28276    22     0.26948    0.79008     0.05    -0.51021    0.66260
+ 25   64    -0.28643    0.24982    22    -1.14654    0.26389     0.05    -0.80454    0.23167
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   5
+Three random effects per study
+
+ 
+Obs   id                           y11             y10             y01             y00
+
+  1   Anzellotti 2010                1               0               0               0
+  2   Song 2006                      2               0               0               0
+  3   Wang 2007                      2               0               0               0
+  4   Tavares 2017                   3               0               0               0
+  5   Weaver 2013                    3               0               1               0
+  6   Gnanadas 2017                  4               1               1               0
+  7   Morgan 2003                    6               0               0               0
+  8   Stufflebeam 2011               5               0               1               0
+  9   Zhao 2019                      6               0               0               0
+ 10   vanHoudt 2015                  7               0               0               0
+ 11   Jann 2008                      8               0               0               0
+ 12   Kang 2003                      7               1               0               0
+ 13   Hunyadi 2014                   4               3               3               0
+ 14   Yang 2015                      9               2               0               0
+ 15   Hunyadi 2015b                  9               3               0               0
+ 16   Hunyadi 2015a                  4               7               7               0
+ 17   Su 2015                       21               0               0               0
+ 18   Barron 2014                   21               2               0               0
+ 19   Lee 2014                      21               2               5               1
+ 20   Reyes 2016                    28               3               3               0
+ 21   Boerwinkle 2017               27               7               2               0
+ 22   Chen 2017                     30               2               6               4
+ 23   Bettus 2010                   16              10               6              12
+ 24   Khoo 2019                     16               8               7              18
+ 25   Boerwinkle 2019               22               3               1              38
+
+                         StdErr
+Obs    n      eta2        Pred     DF     tValue      Probt     Alpha      eta2l      eta2u
+
+  1    1     2.02759    1.16926    22     1.73409    0.09690     0.05    -0.39730    4.45248
+  2    2     2.15582    1.12014    22     1.92459    0.06731     0.05    -0.16721    4.47886
+  3    2     2.15582    1.12014    22     1.92459    0.06731     0.05    -0.16721    4.47886
+  4    3     2.26169    1.08468    22     2.08512    0.04887     0.05     0.01220    4.51118
+  5    4     2.35119    1.05625    22     2.22598    0.03657     0.05     0.16066    4.54172
+  6    6     1.71691    0.84098    22     2.04157    0.05337     0.05    -0.02717    3.46099
+  7    6     2.50214    1.01710    22     2.46007    0.02222     0.05     0.39280    4.61148
+  8    6     2.50539    1.01271    22     2.47395    0.02156     0.05     0.40516    4.60561
+  9    6     2.50214    1.01710    22     2.46007    0.02222     0.05     0.39280    4.61148
+ 10    7     2.56593    1.00158    22     2.56188    0.01778     0.05     0.48878    4.64308
+ 11    8     2.62413    0.98814    22     2.65562    0.01444     0.05     0.57485    4.67342
+ 12    8     1.90883    0.81082    22     2.35421    0.02790     0.05     0.22730    3.59036
+ 13   10     1.05728    0.63639    22     1.66137    0.11082     0.05    -0.26251    2.37706
+ 14   11     1.61580    0.68237    22     2.36793    0.02710     0.05     0.20066    3.03095
+ 15   12     1.29021    0.61525    22     2.09705    0.04770     0.05     0.01426    2.56617
+ 16   18     0.57586    0.46602    22     1.23570    0.22960     0.05    -0.39060    1.54232
+ 17   21     3.11878    0.89555    22     3.48254    0.00211     0.05     1.26153    4.97604
+ 18   23     2.21967    0.62053    22     3.57707    0.00168     0.05     0.93277    3.50656
+ 19   29     2.10661    0.53941    22     3.90536    0.00076     0.05     0.98793    3.22528
+ 20   34     2.24182    0.53086    22     4.22302    0.00035     0.05     1.14089    3.34275
+ 21   36     1.47457    0.40384    22     3.65134    0.00141     0.05     0.63705    2.31209
+ 22   42     1.82495    0.41613    22     4.38554    0.00024     0.05     0.96195    2.68794
+ 23   44     0.13024    0.29628    22     0.43958    0.66453     0.05    -0.48420    0.74468
+ 24   49     0.01268    0.28113    22     0.04510    0.96444     0.05    -0.57036    0.59571
+ 25   64    -0.41159    0.25329    22    -1.62497    0.11841     0.05    -0.93688    0.11370
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   6
+Three random effects per study
+
+ 
+Obs   id                           y11             y10             y01             y00
+
+  1   Anzellotti 2010                1               0               0               0
+  2   Song 2006                      2               0               0               0
+  3   Wang 2007                      2               0               0               0
+  4   Tavares 2017                   3               0               0               0
+  5   Weaver 2013                    3               0               1               0
+  6   Gnanadas 2017                  4               1               1               0
+  7   Morgan 2003                    6               0               0               0
+  8   Stufflebeam 2011               5               0               1               0
+  9   Zhao 2019                      6               0               0               0
+ 10   vanHoudt 2015                  7               0               0               0
+ 11   Jann 2008                      8               0               0               0
+ 12   Kang 2003                      7               1               0               0
+ 13   Hunyadi 2014                   4               3               3               0
+ 14   Yang 2015                      9               2               0               0
+ 15   Hunyadi 2015b                  9               3               0               0
+ 16   Hunyadi 2015a                  4               7               7               0
+ 17   Su 2015                       21               0               0               0
+ 18   Barron 2014                   21               2               0               0
+ 19   Lee 2014                      21               2               5               1
+ 20   Reyes 2016                    28               3               3               0
+ 21   Boerwinkle 2017               27               7               2               0
+ 22   Chen 2017                     30               2               6               4
+ 23   Bettus 2010                   16              10               6              12
+ 24   Khoo 2019                     16               8               7              18
+ 25   Boerwinkle 2019               22               3               1              38
+
+                         StdErr
+Obs    n      eta3        Pred     DF     tValue      Probt     Alpha      eta3l      eta3u
+
+  1    1     0.09050    3.34868    22     0.02703    0.97868     0.05    -6.85424    7.03524
+  2    2     0.14362    3.42680    22     0.04191    0.96695     0.05    -6.96313    7.25038
+  3    2     0.14362    3.42680    22     0.04191    0.96695     0.05    -6.96313    7.25038
+  4    3     0.18003    3.49040    22     0.05158    0.95933     0.05    -7.05862    7.41868
+  5    4    -0.20746    3.03151    22    -0.06844    0.94606     0.05    -6.49442    6.07949
+  6    6    -0.79538    2.52819    22    -0.31460    0.75603     0.05    -6.03852    4.44776
+  7    6     0.23919    3.62044    22     0.06607    0.94792     0.05    -7.26914    7.74753
+  8    6    -0.11450    3.10318    22    -0.03690    0.97090     0.05    -6.55011    6.32110
+  9    6     0.23919    3.62044    22     0.06607    0.94792     0.05    -7.26914    7.74753
+ 10    7     0.24974    3.64942    22     0.06843    0.94606     0.05    -7.31870    7.81818
+ 11    8     0.25761    3.67325    22     0.07013    0.94472     0.05    -7.36024    7.87547
+ 12    8     0.01925    3.25709    22     0.00591    0.99534     0.05    -6.73554    6.77404
+ 13   10    -2.02408    2.05035    22    -0.98719    0.33428     0.05    -6.27626    2.22809
+ 14   11    -0.04807    3.18606    22    -0.01509    0.98810     0.05    -6.65556    6.55942
+ 15   12    -0.11157    3.14009    22    -0.03553    0.97198     0.05    -6.62371    6.40057
+ 16   18    -3.28298    1.78891    22    -1.83518    0.08004     0.05    -6.99295    0.42699
+ 17   21     0.26969    3.76041    22     0.07172    0.94347     0.05    -7.52891    8.06830
+ 18   23     0.06543    3.32946    22     0.01965    0.98450     0.05    -6.83944    6.97031
+ 19   29     0.61683    1.23949    22     0.49764    0.62367     0.05    -1.95372    3.18737
+ 20   34    -0.98890    2.34863    22    -0.42105    0.67780     0.05    -5.85966    3.88186
+ 21   36    -1.23414    2.24258    22    -0.55032    0.58764     0.05    -5.88497    3.41668
+ 22   42     2.08867    0.91980    22     2.27078    0.03330     0.05     0.18111    3.99623
+ 23   44     1.12055    0.62781    22     1.78486    0.08808     0.05    -0.18144    2.42255
+ 24   49     1.57895    0.60706    22     2.60099    0.01631     0.05     0.31999    2.83792
+ 25   64     4.98846    1.01540    22     4.91282    0.00007     0.05     2.88266    7.09427
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   7
+Prediction
+
+                                          o
+                                          d
+                                          d                                       o       o
+                                          s                                       r       r
+                                          r                                       9       9
+                                          a                                       5       5
+ O                                        t       p       p       p       p       p       p
+ b        i               p       p       i       1       1       2       2       i       i
+ s        d          n    1       2       o       l       u       l       u       l       u
+
+ 1 Anzellotti 2010   1 0.92475 0.88366   1.095 0.35122 0.99643 0.40196 0.98848  0.0011 1135.97
+ 2 Song 2006         2 0.93359 0.89621   1.154 0.41649 0.99640 0.45829 0.98878  0.0009 1408.63
+ 3 Wang 2007         2 0.93359 0.89621   1.154 0.41649 0.99640 0.45829 0.98878  0.0009 1408.63
+ 4 Tavares 2017      3 0.94006 0.90565   1.197 0.46813 0.99643 0.50305 0.98913  0.0009 1666.84
+ 5 Weaver 2013       4 0.83029 0.91303   0.813 0.36625 0.97642 0.54008 0.98946  0.0015  436.81
+ 6 Gnanadas 2017     6 0.86509 0.84773   0.451 0.46752 0.97909 0.49321 0.96956  0.0024   85.44
+ 7 Morgan 2003       6 0.95249 0.92429   1.270 0.57582 0.99663 0.59696 0.99016  0.0007 2315.84
+ 8 Stufflebeam 2011  6 0.86649 0.92452   0.892 0.46582 0.97972 0.59993 0.99010  0.0014  556.18
+ 9 Zhao 2019         6 0.95249 0.92429   1.270 0.57582 0.99663 0.59696 0.99016  0.0007 2315.84
+10 vanHoudt 2015     7 0.95533 0.92864   1.284 0.60188 0.99671 0.61982 0.99046  0.0007 2485.37
+11 Jann 2008         8 0.95778 0.93240   1.294 0.62467 0.99678 0.63988 0.99075  0.0006 2631.92
+12 Kang 2003         8 0.95811 0.87089   1.019 0.63242 0.99672 0.55658 0.97315  0.0012  874.84
+13 Hunyadi 2014     10 0.73888 0.74217   0.132 0.41296 0.91923 0.43475 0.91506  0.0019    9.28
+14 Yang 2015        11 0.96377 0.83422   0.953 0.68600 0.99692 0.55000 0.95395  0.0013  705.86
+15 Hunyadi 2015b    12 0.96521 0.78418   0.894 0.69951 0.99699 0.50356 0.92865  0.0013  602.19
+16 Hunyadi 2015a    18 0.62755 0.64011   0.038 0.38628 0.81853 0.40357 0.82380  0.0009    1.53
+17 Su 2015          21 0.97393 0.95766   1.310 0.78021 0.99746 0.77929 0.99315  0.0005 3191.67
+18 Barron 2014      23 0.97539 0.90200   1.068 0.79694 0.99751 0.71764 0.97087  0.0011 1064.55
+19 Lee 2014         29 0.80560 0.89154   1.853 0.61930 0.91347 0.72868 0.96177  0.1417   24.22
+20 Reyes 2016       34 0.91210 0.90394   0.372 0.76229 0.97108 0.75784 0.96587  0.0029   48.51
+21 Boerwinkle 2017  36 0.93932 0.81375   0.291 0.80202 0.98338 0.65409 0.90987  0.0028   30.47
+22 Chen 2017        42 0.77322 0.86116   8.074 0.61934 0.87722 0.72351 0.93631  1.1986   54.39
+23 Bettus 2010      44 0.61581 0.53251   3.067 0.46008 0.75094 0.38126 0.67802  0.8341   11.27
+24 Khoo 2019        49 0.51904 0.50317   4.850 0.37514 0.65984 0.36115 0.64467  1.3771   17.08
+25 Boerwinkle 2019  64 0.42888 0.39853 146.711 0.30906 0.55766 0.28153 0.52840 17.8617 1205.04
+g006.sas: Random-effects analysis                              21:02 Tuesday, July 25, 2023   8
+Prediction. eta3 is the log odds ratio
+
+Obs    id                   n       p1         p2        eta3        p1l
+
+  1    Anzellotti 2010      1    0.92475    0.88366     0.09050    0.35122
+  2    Song 2006            2    0.93359    0.89621     0.14362    0.41649
+  3    Wang 2007            2    0.93359    0.89621     0.14362    0.41649
+  4    Tavares 2017         3    0.94006    0.90565     0.18003    0.46813
+  5    Weaver 2013          4    0.83029    0.91303    -0.20746    0.36625
+  6    Gnanadas 2017        6    0.86509    0.84773    -0.79538    0.46752
+  7    Morgan 2003          6    0.95249    0.92429     0.23919    0.57582
+  8    Stufflebeam 2011     6    0.86649    0.92452    -0.11450    0.46582
+  9    Zhao 2019            6    0.95249    0.92429     0.23919    0.57582
+ 10    vanHoudt 2015        7    0.95533    0.92864     0.24974    0.60188
+ 11    Jann 2008            8    0.95778    0.93240     0.25761    0.62467
+ 12    Kang 2003            8    0.95811    0.87089     0.01925    0.63242
+ 13    Hunyadi 2014        10    0.73888    0.74217    -2.02408    0.41296
+ 14    Yang 2015           11    0.96377    0.83422    -0.04807    0.68600
+ 15    Hunyadi 2015b       12    0.96521    0.78418    -0.11157    0.69951
+ 16    Hunyadi 2015a       18    0.62755    0.64011    -3.28298    0.38628
+ 17    Su 2015             21    0.97393    0.95766     0.26969    0.78021
+ 18    Barron 2014         23    0.97539    0.90200     0.06543    0.79694
+ 19    Lee 2014            29    0.80560    0.89154     0.61683    0.61930
+ 20    Reyes 2016          34    0.91210    0.90394    -0.98890    0.76229
+ 21    Boerwinkle 2017     36    0.93932    0.81375    -1.23414    0.80202
+ 22    Chen 2017           42    0.77322    0.86116     2.08867    0.61934
+ 23    Bettus 2010         44    0.61581    0.53251     1.12055    0.46008
+ 24    Khoo 2019           49    0.51904    0.50317     1.57895    0.37514
+ 25    Boerwinkle 2019     64    0.42888    0.39853     4.98846    0.30906
+
+Obs      p1u        p2l        p2u        eta3l      eta3u
+
+  1    0.99643    0.40196    0.98848    -6.85424    7.03524
+  2    0.99640    0.45829    0.98878    -6.96313    7.25038
+  3    0.99640    0.45829    0.98878    -6.96313    7.25038
+  4    0.99643    0.50305    0.98913    -7.05862    7.41868
+  5    0.97642    0.54008    0.98946    -6.49442    6.07949
+  6    0.97909    0.49321    0.96956    -6.03852    4.44776
+  7    0.99663    0.59696    0.99016    -7.26914    7.74753
+  8    0.97972    0.59993    0.99010    -6.55011    6.32110
+  9    0.99663    0.59696    0.99016    -7.26914    7.74753
+ 10    0.99671    0.61982    0.99046    -7.31870    7.81818
+ 11    0.99678    0.63988    0.99075    -7.36024    7.87547
+ 12    0.99672    0.55658    0.97315    -6.73554    6.77404
+ 13    0.91923    0.43475    0.91506    -6.27626    2.22809
+ 14    0.99692    0.55000    0.95395    -6.65556    6.55942
+ 15    0.99699    0.50356    0.92865    -6.62371    6.40057
+ 16    0.81853    0.40357    0.82380    -6.99295    0.42699
+ 17    0.99746    0.77929    0.99315    -7.52891    8.06830
+ 18    0.99751    0.71764    0.97087    -6.83944    6.97031
+ 19    0.91347    0.72868    0.96177    -1.95372    3.18737
+ 20    0.97108    0.75784    0.96587    -5.85966    3.88186
+ 21    0.98338    0.65409    0.90987    -5.88497    3.41668
+ 22    0.87722    0.72351    0.93631     0.18111    3.99623
+ 23    0.75094    0.38126    0.67802    -0.18144    2.42255
+ 24    0.65984    0.36115    0.64467     0.31999    2.83792
+ 25    0.55766    0.28153    0.52840     2.88266    7.09427

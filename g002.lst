@@ -1,0 +1,718 @@
+1                                        The SAS System             21:29 Tuesday, July 25, 2023
+
+WARNING: One or more libraries specified in the concatenated library SASHELP 
+WARNING: do not exist.  These libraries were removed from the concatenation.
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7) 
+      Licensed to UNIVERSITY OF NORTH CAROLINA CHAPEL HILL - SFA T&R, Site 70022629.
+NOTE: This session is executing on the W32_10PRO  platform.
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ W32_10PRO WIN 10.0.19041  Workstation
+
+NOTE: SAS initialization used:
+      real time           0.38 seconds
+      cpu time            0.17 seconds
+      
+
+NOTE: AUTOEXEC processing beginning; file is c:\progs\cmd\autoexec.sas.
+
+
+NOTE: AUTOEXEC processing completed.
+
+1          %let progname = g002.sas;
+2          ods pdf file = "g002.pdf"  style=styles.journal;
+NOTE: Writing ODS PDF output to DISK destination "C:\prj\TRACS\Gillette\g002.pdf", 
+      printer "PDF".
+3          
+4          * input:
+5          * xref:
+6          * does: -
+7          *********************************************;
+8          libname X "";
+NOTE: Libref X was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: C:\prj\TRACS\Gillette\
+9          title "&progname:                        ";
+10         *********************************************;
+11         %macro m(a, b, c, d, row, col);
+12           count = &a; &row=1; &col=1; output;
+13           count = &b; &row=1; &col=2; output;
+14           count = &c; &row=2; &col=1; output;
+15           count = &d; &row=2; &col=2; output;
+16         %mend;
+17         *********************************************;
+18         
+19         data A;
+20           input s a b c d;
+21           %m(a, b, c, d, row, col);
+22           cards;
+
+NOTE: The data set WORK.A has 8 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+2 The SAS System                                                   21:29 Tuesday, July 25, 2023
+
+      
+
+25           run;
+26         
+27         proc freq data=A;
+28           tables row*col;
+29           exact oddsratio;
+30           weight count;
+31           by s;
+32           run;
+
+NOTE: There were 8 observations read from the data set WORK.A.
+NOTE: The PROCEDURE FREQ printed pages 1-2.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+33         
+34         proc freq data=A;
+35           tables s*row*col / exact oddsratio cmh;
+36           weight count;
+37           run;
+
+NOTE: There were 8 observations read from the data set WORK.A.
+NOTE: The PROCEDURE FREQ printed pages 3-5.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.03 seconds
+      
+
+38         
+39         proc genmod data=A;
+40           class s row col;
+41           model count = s|row|col / d=p;
+42           run;
+
+NOTE: Fitting saturated model. Scale will not be estimated.
+NOTE: Algorithm converged.
+NOTE: The scale parameter was held fixed.
+NOTE: The PROCEDURE GENMOD printed pages 6-7.
+NOTE: PROCEDURE GENMOD used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+43         
+44         proc genmod data=A;
+45           class s row col;
+46           model count = s|row s|col row|col / d=p;
+47           run;
+
+NOTE: Algorithm converged.
+NOTE: The scale parameter was held fixed.
+NOTE: The PROCEDURE GENMOD printed pages 8-9.
+NOTE: PROCEDURE GENMOD used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+48         
+49         data B;
+50           set A;
+3 The SAS System                                                   21:29 Tuesday, July 25, 2023
+
+51           row=1; y = a; m=a+b; output;
+52           row=2; y = c; m=c+d; output;
+53           run;
+
+NOTE: There were 8 observations read from the data set WORK.A.
+NOTE: The data set WORK.B has 16 observations and 10 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+54         
+55         title2 "Exact ";
+56         proc logistic data=B exactonly;
+57           class s row / param=ref;
+58           model y/m = row;
+59           exact row
+60             / estimate=odds;
+61           by s;
+62           run;
+
+NOTE: There were 16 observations read from the data set WORK.B.
+NOTE: The PROCEDURE LOGISTIC printed pages 10-11.
+NOTE: PROCEDURE LOGISTIC used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.03 seconds
+      
+
+63         
+64         
+65         
+66         
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           0.97 seconds
+      cpu time            0.56 seconds
+      
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   1
+
+s=1
+
+The FREQ Procedure
+
+Table of row by col
+
+row       col
+
+Frequency|
+Percent  |
+Row Pct  |
+Col Pct  |       1|       2|  Total
+---------+--------+--------+
+       1 |     38 |      1 |     39
+         |  59.38 |   1.56 |  60.94
+         |  97.44 |   2.56 |
+         |  92.68 |   4.35 |
+---------+--------+--------+
+       2 |      3 |     22 |     25
+         |   4.69 |  34.38 |  39.06
+         |  12.00 |  88.00 |
+         |   7.32 |  95.65 |
+---------+--------+--------+
+Total          41       23       64
+            64.06    35.94   100.00
+
+
+Statistics for Table of row by col
+
+                  Odds Ratio and Relative Risks
+ 
+Statistic                        Value       95% Confidence Limits
+------------------------------------------------------------------
+Odds Ratio                    278.6667       27.2958     2844.9483
+Relative Risk (Column 1)        8.1197        2.8054       23.5007
+Relative Risk (Column 2)        0.0291        0.0042        0.2028
+
+
+            Odds Ratio
+-----------------------------------
+Odds Ratio                 278.6667
+                                   
+Asymptotic Conf Limits             
+95% Lower Conf Limit        27.2958
+95% Upper Conf Limit      2844.9483
+                                   
+Exact Conf Limits                  
+95% Lower Conf Limit        24.0073
+95% Upper Conf Limit     11765.0331
+
+Sample Size = 64
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   2
+
+s=2
+
+The FREQ Procedure
+
+Table of row by col
+
+row       col
+
+Frequency|
+Percent  |
+Row Pct  |
+Col Pct  |       1|       2|  Total
+---------+--------+--------+
+       1 |     18 |      7 |     25
+         |  36.73 |  14.29 |  51.02
+         |  72.00 |  28.00 |
+         |  69.23 |  30.43 |
+---------+--------+--------+
+       2 |      8 |     16 |     24
+         |  16.33 |  32.65 |  48.98
+         |  33.33 |  66.67 |
+         |  30.77 |  69.57 |
+---------+--------+--------+
+Total          26       23       49
+            53.06    46.94   100.00
+
+
+Statistics for Table of row by col
+
+                  Odds Ratio and Relative Risks
+ 
+Statistic                        Value       95% Confidence Limits
+------------------------------------------------------------------
+Odds Ratio                      5.1429        1.5220       17.3775
+Relative Risk (Column 1)        2.1600        1.1662        4.0006
+Relative Risk (Column 2)        0.4200        0.2108        0.8368
+
+
+            Odds Ratio
+-----------------------------------
+Odds Ratio                   5.1429
+                                   
+Asymptotic Conf Limits             
+95% Lower Conf Limit         1.5220
+95% Upper Conf Limit        17.3775
+                                   
+Exact Conf Limits                  
+95% Lower Conf Limit         1.3153
+95% Upper Conf Limit        20.8329
+
+Sample Size = 49
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   3
+
+The FREQ Procedure
+
+Table 1 of row by col
+Controlling for s=1
+
+row       col
+
+Frequency|
+Percent  |
+Row Pct  |
+Col Pct  |       1|       2|  Total
+---------+--------+--------+
+       1 |     38 |      1 |     39
+         |  59.38 |   1.56 |  60.94
+         |  97.44 |   2.56 |
+         |  92.68 |   4.35 |
+---------+--------+--------+
+       2 |      3 |     22 |     25
+         |   4.69 |  34.38 |  39.06
+         |  12.00 |  88.00 |
+         |   7.32 |  95.65 |
+---------+--------+--------+
+Total          41       23       64
+            64.06    35.94   100.00
+
+
+Statistics for Table 1 of row by col
+Controlling for s=1
+
+Statistic                     DF       Value      Prob
+------------------------------------------------------
+Chi-Square                     1     48.3007    <.0001
+Likelihood Ratio Chi-Square    1     55.9439    <.0001
+Continuity Adj. Chi-Square     1     44.6610    <.0001
+Mantel-Haenszel Chi-Square     1     47.5460    <.0001
+Phi Coefficient                       0.8687          
+Contingency Coefficient               0.6558          
+Cramer's V                            0.8687          
+
+
+       Fisher's Exact Test
+----------------------------------
+Cell (1,1) Frequency (F)        38
+Left-sided Pr <= F          1.0000
+Right-sided Pr >= F         <.0001
+                                  
+Table Probability (P)       <.0001
+Two-sided Pr <= P           <.0001
+
+
+                  Odds Ratio and Relative Risks
+ 
+Statistic                        Value       95% Confidence Limits
+------------------------------------------------------------------
+Odds Ratio                    278.6667       27.2958     2844.9483
+Relative Risk (Column 1)        8.1197        2.8054       23.5007
+Relative Risk (Column 2)        0.0291        0.0042        0.2028
+
+Sample Size = 64
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   4
+
+The FREQ Procedure
+
+Table 2 of row by col
+Controlling for s=2
+
+row       col
+
+Frequency|
+Percent  |
+Row Pct  |
+Col Pct  |       1|       2|  Total
+---------+--------+--------+
+       1 |     18 |      7 |     25
+         |  36.73 |  14.29 |  51.02
+         |  72.00 |  28.00 |
+         |  69.23 |  30.43 |
+---------+--------+--------+
+       2 |      8 |     16 |     24
+         |  16.33 |  32.65 |  48.98
+         |  33.33 |  66.67 |
+         |  30.77 |  69.57 |
+---------+--------+--------+
+Total          26       23       49
+            53.06    46.94   100.00
+
+
+Statistics for Table 2 of row by col
+Controlling for s=2
+
+Statistic                     DF       Value      Prob
+------------------------------------------------------
+Chi-Square                     1      7.3505    0.0067
+Likelihood Ratio Chi-Square    1      7.5443    0.0060
+Continuity Adj. Chi-Square     1      5.8800    0.0153
+Mantel-Haenszel Chi-Square     1      7.2005    0.0073
+Phi Coefficient                       0.3873          
+Contingency Coefficient               0.3612          
+Cramer's V                            0.3873          
+
+
+       Fisher's Exact Test
+----------------------------------
+Cell (1,1) Frequency (F)        18
+Left-sided Pr <= F          0.9988
+Right-sided Pr >= F         0.0072
+                                  
+Table Probability (P)       0.0061
+Two-sided Pr <= P           0.0101
+
+
+                  Odds Ratio and Relative Risks
+ 
+Statistic                        Value       95% Confidence Limits
+------------------------------------------------------------------
+Odds Ratio                      5.1429        1.5220       17.3775
+Relative Risk (Column 1)        2.1600        1.1662        4.0006
+Relative Risk (Column 2)        0.4200        0.2108        0.8368
+
+Sample Size = 49
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   5
+
+The FREQ Procedure
+
+Summary Statistics for row by col
+Controlling for s
+
+  Cochran-Mantel-Haenszel Statistics (Based on Table Scores)
+ 
+Statistic    Alternative Hypothesis    DF       Value      Prob
+---------------------------------------------------------------
+    1        Nonzero Correlation        1     47.1930    <.0001
+    2        Row Mean Scores Differ     1     47.1930    <.0001
+    3        General Association        1     47.1930    <.0001
+
+
+                        Common Odds Ratio and Relative Risks
+ 
+Statistic                   Method                  Value       95% Confidence Limits
+-------------------------------------------------------------------------------------
+Odds Ratio                  Mantel-Haenszel       15.9196        6.2963       40.2511
+                            Logit                 12.1564        4.1347       35.7411
+
+Relative Risk (Column 1)    Mantel-Haenszel        4.0036        2.2801        7.0299
+                            Logit                  3.0144        1.7687        5.1375
+
+Relative Risk (Column 2)    Mantel-Haenszel        0.1771        0.0940        0.3335
+                            Logit                  0.3114        0.1627        0.5963
+
+
+   Breslow-Day Test for
+Homogeneity of Odds Ratios
+--------------------------
+Chi-Square         10.8129
+DF                       1
+Pr > ChiSq          0.0010
+
+
+Total Sample Size = 113
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   6
+
+The GENMOD Procedure
+
+      Model Information
+
+Data Set               WORK.A
+Distribution          Poisson
+Link Function             Log
+Dependent Variable      count
+
+
+Number of Observations Read           8
+Number of Observations Used           8
+
+
+  Class Level Information
+ 
+Class      Levels    Values
+
+s               2    1 2   
+row             2    1 2   
+col             2    1 2   
+
+
+             Criteria For Assessing Goodness Of Fit
+ 
+Criterion                     DF           Value        Value/DF
+
+Deviance                       0          0.0000           .    
+Scaled Deviance                0          0.0000           .    
+Pearson Chi-Square             .          0.0000           .    
+Scaled Pearson X2              .          0.0000           .    
+Log Likelihood                          223.1721                
+Full Log Likelihood                     -16.2561                
+AIC (smaller is better)                  48.5123                
+AICC (smaller is better)                   .                    
+BIC (smaller is better)                  49.1478                
+
+
+Algorithm converged.                                                       
+
+
+                  Analysis Of Maximum Likelihood Parameter Estimates
+ 
+                                  Standard       Wald 95%             Wald
+Parameter           DF  Estimate     Error   Confidence Limits  Chi-Square  Pr > ChiSq
+
+Intercept            1    2.7726    0.2500    2.2826    3.2626      123.00      <.0001
+s          1         1    0.3185    0.3286   -0.3255    0.9624        0.94      0.3324
+s          2         0    0.0000    0.0000    0.0000    0.0000         .         .    
+row        1         1   -0.8267    0.4532   -1.7149    0.0615        3.33      0.0681
+row        2         0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row      1  1      1   -2.2644    1.1184   -4.4564   -0.0723        4.10      0.0429
+s*row      1  2      0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row      2  1      0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row      2  2      0    0.0000    0.0000    0.0000    0.0000         .         .    
+col        1         1   -0.6931    0.4330   -1.5418    0.1555        2.56      0.1094
+col        2         0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*col      1  1      1   -1.2993    0.7525   -2.7742    0.1756        2.98      0.0842
+s*col      1  2      0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*col      2  1      0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*col      2  2      0    0.0000    0.0000    0.0000    0.0000         .         .    
+row*col    1  1      1    1.6376    0.6212    0.4200    2.8552        6.95      0.0084
+row*col    1  2      0    0.0000    0.0000    0.0000    0.0000         .         .    
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   7
+
+The GENMOD Procedure
+
+                  Analysis Of Maximum Likelihood Parameter Estimates
+ 
+                                  Standard       Wald 95%             Wald
+Parameter           DF  Estimate     Error   Confidence Limits  Chi-Square  Pr > ChiSq
+
+row*col    2  1      0    0.0000    0.0000    0.0000    0.0000         .         .    
+row*col    2  2      0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  1  1  1   1    3.9924    1.3383    1.3694    6.6154        8.90      0.0029
+s*row*col  1  1  2   0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  1  2  1   0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  1  2  2   0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  2  1  1   0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  2  1  2   0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  2  2  1   0    0.0000    0.0000    0.0000    0.0000         .         .    
+s*row*col  2  2  2   0    0.0000    0.0000    0.0000    0.0000         .         .    
+Scale                0    1.0000    0.0000    1.0000    1.0000                        
+
+NOTE: The scale parameter was held fixed.
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   8
+
+The GENMOD Procedure
+
+      Model Information
+
+Data Set               WORK.A
+Distribution          Poisson
+Link Function             Log
+Dependent Variable      count
+
+
+Number of Observations Read           8
+Number of Observations Used           8
+
+
+  Class Level Information
+ 
+Class      Levels    Values
+
+s               2    1 2   
+row             2    1 2   
+col             2    1 2   
+
+
+             Criteria For Assessing Goodness Of Fit
+ 
+Criterion                     DF           Value        Value/DF
+
+Deviance                       1         12.1490         12.1490
+Scaled Deviance                1         12.1490         12.1490
+Pearson Chi-Square             1         11.5855         11.5855
+Scaled Pearson X2              1         11.5855         11.5855
+Log Likelihood                          217.0975                
+Full Log Likelihood                     -22.3307                
+AIC (smaller is better)                  58.6613                
+AICC (smaller is better)                   .                    
+BIC (smaller is better)                  59.2174                
+
+
+Algorithm converged.                                                       
+
+
+                     Analysis Of Maximum Likelihood Parameter Estimates
+ 
+                                    Standard   Wald 95% Confidence         Wald
+Parameter           DF   Estimate      Error          Limits         Chi-Square   Pr > ChiSq
+
+Intercept            1     2.9608     0.2219     2.5258     3.3957       178.02       <.0001
+s           1        1    -0.0329     0.3079    -0.6363     0.5705         0.01       0.9149
+s           2        0     0.0000     0.0000     0.0000     0.0000          .          .    
+row         1        1    -1.6558     0.4735    -2.5838    -0.7278        12.23       0.0005
+row         2        0     0.0000     0.0000     0.0000     0.0000          .          .    
+s*row       1   1    1     0.1895     0.5078    -0.8058     1.1847         0.14       0.7091
+s*row       1   2    0     0.0000     0.0000     0.0000     0.0000          .          .    
+s*row       2   1    0     0.0000     0.0000     0.0000     0.0000          .          .    
+s*row       2   2    0     0.0000     0.0000     0.0000     0.0000          .          .    
+col         1        1    -1.4158     0.4456    -2.2892    -0.5425        10.10       0.0015
+col         2        0     0.0000     0.0000     0.0000     0.0000          .          .    
+s*col       1   1    1     0.3305     0.5114    -0.6718     1.3328         0.42       0.5181
+s*col       1   2    0     0.0000     0.0000     0.0000     0.0000          .          .    
+s*col       2   1    0     0.0000     0.0000     0.0000     0.0000          .          .    
+s*col       2   2    0     0.0000     0.0000     0.0000     0.0000          .          .    
+row*col     1   1    1     3.1702     0.5110     2.1687     4.1716        38.50       <.0001
+row*col     1   2    0     0.0000     0.0000     0.0000     0.0000          .          .    
+g002.sas:                                                      21:29 Tuesday, July 25, 2023   9
+
+The GENMOD Procedure
+
+                     Analysis Of Maximum Likelihood Parameter Estimates
+ 
+                                    Standard   Wald 95% Confidence         Wald
+Parameter           DF   Estimate      Error          Limits         Chi-Square   Pr > ChiSq
+
+row*col     2   1    0     0.0000     0.0000     0.0000     0.0000          .          .    
+row*col     2   2    0     0.0000     0.0000     0.0000     0.0000          .          .    
+Scale                0     1.0000     0.0000     1.0000     1.0000                          
+
+NOTE: The scale parameter was held fixed.
+g002.sas:                                                      21:29 Tuesday, July 25, 2023  10
+Exact 
+
+s=1
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           8
+Number of Observations Used           8
+Sum of Frequencies Read             256
+Sum of Frequencies Used             256
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event              164
+       2     Nonevent            92
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score             192.4   <.0001   <.0001
+         Probability    1.19E-49   <.0001   <.0001
+
+
+                   Exact Odds Ratios
+ 
+                            95% Confidence
+Parameter     Estimate          Limits          p-Value
+
+row       1    262.784     80.927   >999.999     <.0001
+g002.sas:                                                      21:29 Tuesday, July 25, 2023  11
+Exact 
+
+s=2
+
+The LOGISTIC Procedure
+
+             Model Information
+
+Data Set                       WORK.B      
+Response Variable (Events)     y           
+Response Variable (Trials)     m           
+Model                          binary logit
+
+
+Number of Observations Read           8
+Number of Observations Used           8
+Sum of Frequencies Read             196
+Sum of Frequencies Used             196
+
+
+          Response Profile
+ 
+ Ordered     Binary           Total
+   Value     Outcome      Frequency
+
+       1     Event              104
+       2     Nonevent            92
+
+
+   Class Level Information
+ 
+                      Design
+Class     Value     Variables
+
+row       1                 1
+          2                 0
+
+
+Exact Conditional Analysis
+
+
+             Exact Conditional Tests
+ 
+                                   --- p-Value ---
+Effect   Test          Statistic    Exact      Mid
+
+row      Score           29.2522   <.0001   <.0001
+         Probability    3.744E-8   <.0001   <.0001
+
+
+                   Exact Odds Ratios
+ 
+                            95% Confidence
+Parameter     Estimate          Limits          p-Value
+
+row       1      5.095      2.682      9.907     <.0001
+

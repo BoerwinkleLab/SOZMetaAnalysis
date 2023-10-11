@@ -1,0 +1,406 @@
+1                                        The SAS System           17:35 Friday, January 27, 2023
+
+WARNING: One or more libraries specified in the concatenated library SASHELP 
+WARNING: do not exist.  These libraries were removed from the concatenation.
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7) 
+      Licensed to UNIVERSITY OF NORTH CAROLINA CHAPEL HILL - SFA T&R, Site 70022629.
+NOTE: This session is executing on the W32_10PRO  platform.
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ W32_10PRO WIN 10.0.19041  Workstation
+
+NOTE: SAS initialization used:
+      real time           0.32 seconds
+      cpu time            0.20 seconds
+      
+
+NOTE: AUTOEXEC processing beginning; file is c:\progs\cmd\autoexec.sas.
+
+
+NOTE: AUTOEXEC processing completed.
+
+1          %let progname = g003.sas;
+2          ods pdf file = "g003.pdf"  style=styles.journal;
+NOTE: Writing ODS PDF output to DISK destination "C:\prj\TRACS\Gillette\g003.pdf", 
+      printer "PDF".
+3          
+4          * input: ma_data2.csv
+5          * does: - Fixed effects analysis
+6                    Empirical logistic transform
+7          *********************************************;
+8          libname X "";
+NOTE: Libref X was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: C:\prj\TRACS\Gillette\
+9          title "&progname: The odds ratio, empirical logistic transform (fixed effects)";
+10         %let csv = ma_data2.csv;
+11         *********************************************;
+12         
+13         title2 "&csv";
+14         proc import datafile="&csv" out=A replace;
+15           guessingrows =  max;
+16           run;
+
+17          /**********************************************************************
+18          *   PRODUCT:   SAS
+19          *   VERSION:   9.4
+20          *   CREATOR:   External File Interface
+21          *   DATE:      27JAN23
+22          *   DESC:      Generated SAS Datastep Code
+23          *   TEMPLATE SOURCE:  (None Specified.)
+24          ***********************************************************************/
+25             data WORK.A    ;
+26             %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+2 The SAS System                                                 17:35 Friday, January 27, 2023
+
+27             infile 'ma_data2.csv' delimiter = ',' MISSOVER DSD lrecl=32767 firstobs=2 ;
+28                informat id $16. ;
+29                informat modality best32. ;
+30                informat modality_type best32. ;
+31                informat a best32. ;
+32                informat b best32. ;
+33                informat c best32. ;
+34                informat d best32. ;
+35                format id $16. ;
+36                format modality best12. ;
+37                format modality_type best12. ;
+38                format a best12. ;
+39                format b best12. ;
+40                format c best12. ;
+41                format d best12. ;
+42             input
+43                         id  $
+44                         modality
+45                         modality_type
+46                         a
+47                         b
+48                         c
+49                         d
+50             ;
+51             if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro
+51       ! variable */
+52             run;
+
+NOTE: The infile 'ma_data2.csv' is:
+      Filename=C:\prj\TRACS\Gillette\ma_data2.csv,
+      RECFM=V,LRECL=32767,File Size (bytes)=683,
+      Last Modified=25Jan2023:15:48:46,
+      Create Time=25Jan2023:15:33:50
+
+NOTE: 25 records were read from the infile 'ma_data2.csv'.
+      The minimum record length was 20.
+      The maximum record length was 29.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+25 rows created in WORK.A from ma_data2.csv.
+  
+  
+  
+NOTE: WORK.A data set was successfully created.
+NOTE: The data set WORK.A has 25 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.09 seconds
+      
+
+53         
+54         data A;
+55           set A (rename=(a=y11 b=y10 c=y01 d=y00)); * rows=rsfMRI, cols=comparative;
+56         
+57           n = y00+y01+y10+y11;
+58           if not missing(n);
+59           k = 0.5;
+60           oddsratio = (y00+k)*(y11+k)/(y01+k)/(y10+k);
+61           se = sqrt(1/(y00+k) + 1/(y11+k) + 1/(y01+k) + 1/(y10+k));
+3 The SAS System                                                 17:35 Friday, January 27, 2023
+
+62           or95cil = oddsratio / exp(1.96 * se);
+63           or95ciu = oddsratio * exp(1.96 * se);
+64           y1d = y10 + y11;
+65           yd1 = y01 + y11;
+66           p1 = y1d / n;  * rsfMRI;
+67           p2 = yd1 / n;  * comparative;
+68           keep id n p1 p2 oddsratio or95cil or95ciu se;
+69           label id = "Study ID";
+70           label n  = "Sample size";
+71           label oddsratio =  "Odds ratio";
+72           label se      = "SE of the log odds ratio";
+73           label or95cil = "Odds ratio, 95% CI, lower limit";
+74           label or95ciu = "Odds ratio, 95% CI, upper limit";
+75           label p1 = "Prevalence of + for rsfMRI";
+76           label p2 = "Prevalence of + for comparative";
+77           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+78         
+79         proc contents data = A order=varnum noprint out=C(rename= name=variable); run;
+
+NOTE: The data set WORK.C has 8 observations and 41 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+80         title2 "Variables";
+81         proc print data=C; var label; id variable; run;
+
+NOTE: There were 8 observations read from the data set WORK.C.
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+82         
+83         title2 "Sorted by id";
+84         proc sort     data=A; by id; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+85         proc print    data=A;
+86           var id n p1 p2 oddsratio or95cil or95ciu;
+87           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 2.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+4 The SAS System                                                 17:35 Friday, January 27, 2023
+
+      
+
+88         
+89         title2 "Sorted by n ";
+90         proc sort     data=A; by n id; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+91         proc print    data=A;
+92           var id n p1 p2 oddsratio or95cil or95ciu;
+93           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 3.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+94         
+95         title2 "Sorted by odds ratio";
+96         proc sort     data=A; by oddsratio id; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+97         proc print    data=A;
+98           var id n p1 p2 oddsratio or95cil or95ciu;
+99           run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 4.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+100        
+101        title2 "Sorted by se";
+102        proc sort     data=A; by se id; run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The data set WORK.A has 25 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+103        proc print    data=A;
+104          var id n p1 p2 oddsratio or95cil or95ciu se;
+105          run;
+
+NOTE: There were 25 observations read from the data set WORK.A.
+NOTE: The PROCEDURE PRINT printed page 5.
+5 The SAS System                                                 17:35 Friday, January 27, 2023
+
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           0.72 seconds
+      cpu time            0.53 seconds
+      
+g003.sas: The odds ratio, empirical logistic transform (fixed effects)                        1
+Variables                                                        17:35 Friday, January 27, 2023
+
+variable     LABEL
+
+id           Study ID                       
+n            Sample size                    
+oddsratio    Odds ratio                     
+or95cil      Odds ratio, 95% CI, lower limit
+or95ciu      Odds ratio, 95% CI, upper limit
+p1           Prevalence of + for rsfMRI     
+p2           Prevalence of + for comparative
+se           SE of the log odds ratio       
+g003.sas: The odds ratio, empirical logistic transform (fixed effects)                        2
+Sorted by id                                                     17:35 Friday, January 27, 2023
+
+Obs    id                   n       p1         p2      oddsratio    or95cil    or95ciu
+
+  1    Anzellotti 2010      1    1.00000    1.00000       3.000      0.0190     473.10
+  2    Barron 2014         23    1.00000    0.91304       8.600      0.1379     536.34
+  3    Bettus 2010         44    0.59091    0.50000       3.022      0.8890      10.27
+  4    Boerwinkle 2017     36    0.94444    0.80556       0.733      0.0317      16.98
+  5    Boerwinkle 2019     64    0.39063    0.35938     165.000     22.7310    1197.71
+  6    Chen 2017           42    0.76190    0.85714       8.446      1.4491      49.23
+  7    Gnanadas 2017        6    0.83333    0.83333       1.000      0.0248      40.28
+  8    Hunyadi 2014        10    0.70000    0.70000       0.184      0.0069       4.86
+  9    Hunyadi 2015a       18    0.61111    0.61111       0.040      0.0018       0.88
+ 10    Hunyadi 2015b       12    1.00000    0.75000       2.714      0.0447     164.95
+ 11    Jann 2008            8    1.00000    1.00000      17.000      0.1334    2166.90
+ 12    Kang 2003            8    1.00000    0.87500       5.000      0.0682     366.35
+ 13    Khoo 2019           49    0.48980    0.46939       4.788      1.4637      15.66
+ 14    Lee 2014            29    0.79310    0.89655       2.345      0.2521      21.82
+ 15    Morgan 2003          6    1.00000    1.00000      13.000      0.1005    1680.94
+ 16    Reyes 2016          34    0.91176    0.91176       1.163      0.0491      27.54
+ 17    Song 2006            2    1.00000    1.00000       5.000      0.0351     711.87
+ 18    Stufflebeam 2011     6    0.83333    1.00000       3.667      0.0490     274.53
+ 19    Su 2015             21    1.00000    1.00000      43.000      0.3470    5328.22
+ 20    Tavares 2017         3    1.00000    1.00000       7.000      0.0514     953.26
+ 21    Wang 2007            2    1.00000    1.00000       5.000      0.0351     711.87
+ 22    Weaver 2013          4    0.75000    1.00000       2.333      0.0298     182.92
+ 23    Yang 2015           11    1.00000    0.81818       3.800      0.0593     243.53
+ 24    Zhao 2019            6    1.00000    1.00000      13.000      0.1005    1680.94
+ 25    vanHoudt 2015        7    1.00000    1.00000      15.000      0.1170    1923.88
+g003.sas: The odds ratio, empirical logistic transform (fixed effects)                        3
+Sorted by n                                                      17:35 Friday, January 27, 2023
+
+Obs    id                   n       p1         p2      oddsratio    or95cil    or95ciu
+
+  1    Anzellotti 2010      1    1.00000    1.00000       3.000      0.0190     473.10
+  2    Song 2006            2    1.00000    1.00000       5.000      0.0351     711.87
+  3    Wang 2007            2    1.00000    1.00000       5.000      0.0351     711.87
+  4    Tavares 2017         3    1.00000    1.00000       7.000      0.0514     953.26
+  5    Weaver 2013          4    0.75000    1.00000       2.333      0.0298     182.92
+  6    Gnanadas 2017        6    0.83333    0.83333       1.000      0.0248      40.28
+  7    Morgan 2003          6    1.00000    1.00000      13.000      0.1005    1680.94
+  8    Stufflebeam 2011     6    0.83333    1.00000       3.667      0.0490     274.53
+  9    Zhao 2019            6    1.00000    1.00000      13.000      0.1005    1680.94
+ 10    vanHoudt 2015        7    1.00000    1.00000      15.000      0.1170    1923.88
+ 11    Jann 2008            8    1.00000    1.00000      17.000      0.1334    2166.90
+ 12    Kang 2003            8    1.00000    0.87500       5.000      0.0682     366.35
+ 13    Hunyadi 2014        10    0.70000    0.70000       0.184      0.0069       4.86
+ 14    Yang 2015           11    1.00000    0.81818       3.800      0.0593     243.53
+ 15    Hunyadi 2015b       12    1.00000    0.75000       2.714      0.0447     164.95
+ 16    Hunyadi 2015a       18    0.61111    0.61111       0.040      0.0018       0.88
+ 17    Su 2015             21    1.00000    1.00000      43.000      0.3470    5328.22
+ 18    Barron 2014         23    1.00000    0.91304       8.600      0.1379     536.34
+ 19    Lee 2014            29    0.79310    0.89655       2.345      0.2521      21.82
+ 20    Reyes 2016          34    0.91176    0.91176       1.163      0.0491      27.54
+ 21    Boerwinkle 2017     36    0.94444    0.80556       0.733      0.0317      16.98
+ 22    Chen 2017           42    0.76190    0.85714       8.446      1.4491      49.23
+ 23    Bettus 2010         44    0.59091    0.50000       3.022      0.8890      10.27
+ 24    Khoo 2019           49    0.48980    0.46939       4.788      1.4637      15.66
+ 25    Boerwinkle 2019     64    0.39063    0.35938     165.000     22.7310    1197.71
+g003.sas: The odds ratio, empirical logistic transform (fixed effects)                        4
+Sorted by odds ratio                                             17:35 Friday, January 27, 2023
+
+Obs    id                   n       p1         p2      oddsratio    or95cil    or95ciu
+
+  1    Hunyadi 2015a       18    0.61111    0.61111       0.040      0.0018       0.88
+  2    Hunyadi 2014        10    0.70000    0.70000       0.184      0.0069       4.86
+  3    Boerwinkle 2017     36    0.94444    0.80556       0.733      0.0317      16.98
+  4    Gnanadas 2017        6    0.83333    0.83333       1.000      0.0248      40.28
+  5    Reyes 2016          34    0.91176    0.91176       1.163      0.0491      27.54
+  6    Weaver 2013          4    0.75000    1.00000       2.333      0.0298     182.92
+  7    Lee 2014            29    0.79310    0.89655       2.345      0.2521      21.82
+  8    Hunyadi 2015b       12    1.00000    0.75000       2.714      0.0447     164.95
+  9    Anzellotti 2010      1    1.00000    1.00000       3.000      0.0190     473.10
+ 10    Bettus 2010         44    0.59091    0.50000       3.022      0.8890      10.27
+ 11    Stufflebeam 2011     6    0.83333    1.00000       3.667      0.0490     274.53
+ 12    Yang 2015           11    1.00000    0.81818       3.800      0.0593     243.53
+ 13    Khoo 2019           49    0.48980    0.46939       4.788      1.4637      15.66
+ 14    Kang 2003            8    1.00000    0.87500       5.000      0.0682     366.35
+ 15    Song 2006            2    1.00000    1.00000       5.000      0.0351     711.87
+ 16    Wang 2007            2    1.00000    1.00000       5.000      0.0351     711.87
+ 17    Tavares 2017         3    1.00000    1.00000       7.000      0.0514     953.26
+ 18    Chen 2017           42    0.76190    0.85714       8.446      1.4491      49.23
+ 19    Barron 2014         23    1.00000    0.91304       8.600      0.1379     536.34
+ 20    Morgan 2003          6    1.00000    1.00000      13.000      0.1005    1680.94
+ 21    Zhao 2019            6    1.00000    1.00000      13.000      0.1005    1680.94
+ 22    vanHoudt 2015        7    1.00000    1.00000      15.000      0.1170    1923.88
+ 23    Jann 2008            8    1.00000    1.00000      17.000      0.1334    2166.90
+ 24    Su 2015             21    1.00000    1.00000      43.000      0.3470    5328.22
+ 25    Boerwinkle 2019     64    0.39063    0.35938     165.000     22.7310    1197.71
+g003.sas: The odds ratio, empirical logistic transform (fixed effects)                        5
+Sorted by se                                                     17:35 Friday, January 27, 2023
+
+Obs   id                  n      p1        p2     oddsratio   or95cil   or95ciu      se
+
+  1   Khoo 2019          49   0.48980   0.46939      4.788     1.4637     15.66   0.60468
+  2   Bettus 2010        44   0.59091   0.50000      3.022     0.8890     10.27   0.62425
+  3   Chen 2017          42   0.76190   0.85714      8.446     1.4491     49.23   0.89936
+  4   Boerwinkle 2019    64   0.39063   0.35938    165.000    22.7310   1197.71   1.01134
+  5   Lee 2014           29   0.79310   0.89655      2.345     0.2521     21.82   1.13798
+  6   Hunyadi 2015a      18   0.61111   0.61111      0.040     0.0018      0.88   1.57762
+  7   Boerwinkle 2017    36   0.94444   0.80556      0.733     0.0317     16.98   1.60303
+  8   Reyes 2016         34   0.91176   0.91176      1.163     0.0491     27.54   1.61447
+  9   Hunyadi 2014       10   0.70000   0.70000      0.184     0.0069      4.86   1.67142
+ 10   Gnanadas 2017       6   0.83333   0.83333      1.000     0.0248     40.28   1.88562
+ 11   Hunyadi 2015b      12   1.00000   0.75000      2.714     0.0447    164.95   2.09547
+ 12   Barron 2014        23   1.00000   0.91304      8.600     0.1379    536.34   2.10868
+ 13   Yang 2015          11   1.00000   0.81818      3.800     0.0593    243.53   2.12256
+ 14   Kang 2003           8   1.00000   0.87500      5.000     0.0682    366.35   2.19089
+ 15   Stufflebeam 2011    6   0.83333   1.00000      3.667     0.0490    274.53   2.20193
+ 16   Weaver 2013         4   0.75000   1.00000      2.333     0.0298    182.92   2.22539
+ 17   Su 2015            21   1.00000   1.00000     43.000     0.3470   5328.22   2.45897
+ 18   Jann 2008           8   1.00000   1.00000     17.000     0.1334   2166.90   2.47339
+ 19   vanHoudt 2015       7   1.00000   1.00000     15.000     0.1170   1923.88   2.47656
+ 20   Morgan 2003         6   1.00000   1.00000     13.000     0.1005   1680.94   2.48069
+ 21   Zhao 2019           6   1.00000   1.00000     13.000     0.1005   1680.94   2.48069
+ 22   Tavares 2017        3   1.00000   1.00000      7.000     0.0514    953.26   2.50713
+ 23   Song 2006           2   1.00000   1.00000      5.000     0.0351    711.87   2.52982
+ 24   Wang 2007           2   1.00000   1.00000      5.000     0.0351    711.87   2.52982
+ 25   Anzellotti 2010     1   1.00000   1.00000      3.000     0.0190    473.10   2.58199
+
